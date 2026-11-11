@@ -78,7 +78,7 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
   </header>
   <main class="min-h-[calc(100vh-160px)] px-4 pb-[230px] pt-7 sm:px-6 md:px-8 md:pt-9 lg:pb-40"><slot/></main>
  </div>
- <PlayerBar/>
+ <ClientOnly><PlayerBar/></ClientOnly>
  <nav aria-label="Navegación móvil" class="fixed bottom-0 left-0 right-0 z-40 flex h-[66px] items-center justify-around border-t border-white/10 bg-[#10131c]/95 pb-1 backdrop-blur-xl lg:hidden">
   <NuxtLink v-for="item in [nav[0],nav[1],nav[2],nav[4]]" :key="item.to" :to="item.to" class="flex flex-col items-center gap-1 px-2 text-[10px] font-semibold text-[#9b9dad]" active-class="!text-violet-300"><component :is="item.icon" :size="20"/>{{item.name}}</NuxtLink>
  </nav>
