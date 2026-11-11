@@ -17,9 +17,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Verificar sintaxis del importador
-        run: node --check scripts/import-csv.mjs
+      - name: Comprobar sintaxis
+        run: |
+          node --check scripts/import-csv.mjs
+          node --check scripts/smoke-local.mjs
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
       - name: Compilar Nuxt
         run: npm run build
+      - name: Prueba funcional del modo local
+        run: node scripts/smoke-local.mjs

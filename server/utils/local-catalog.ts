@@ -6,7 +6,8 @@ import type { ImportTrack } from './csv-music'
 
 export type LocalTrack = Track & { published?: number }
 export type LocalCatalog = { artists: Artist[]; albums: Album[]; tracks: LocalTrack[] }
-export const localCatalogPath = resolve(process.cwd(), '.data', 'webmusic', 'catalog.local.json')
+const dataDir = process.env.WEBMUSIC_DATA_DIR ? resolve(process.env.WEBMUSIC_DATA_DIR) : resolve(process.cwd(), '.data', 'webmusic')
+export const localCatalogPath = resolve(dataDir, 'catalog.local.json')
 const backupPath = localCatalogPath + '.bak'
 const initialCatalog = seed as Catalog
 
