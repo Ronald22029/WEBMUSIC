@@ -1,17 +1,19 @@
-import { demoCatalog } from '../utils/demo'
+import catalog from '../data/catalog.json'
+import type { Catalog } from '../../types/music'
+const fallback = catalog as Catalog
 export default defineEventHandler(async (event) => {
-  // Los datos reales provendrán de D1 al vincular DB en Cloudflare.
-  const db = event.context.cloudflare?.env?.DB
-  if (!db) return demoCatalog
+  const db=event.context.cloudflare?.env?.DB
+  if(!db)return fallback
   try {
-    const [artists, albums, tracks] = await Promise.all([
-      db.prepare('SELECT id, name, slug, description, cover, accent FROM artists WHERE published = 1 ORDER BY name LIMIT 500').all(),
-      db.prepare('SELECT id, title, slug, artist_id AS artistId, year, cover FROM albums WHERE published = 1 ORDER BY year DESC LIMIT 500').all(),
-      db.prepare('SELECT id, title, slug, artist_id AS artistId, album_id AS albumId, duration, audio_url AS audioUrl, cover, plays FROM tracks WHERE published = 1 ORDER BY plays DESC LIMIT 500').all()
+    const [a,b,t]=await Promise.all([
+      db.prepare('SELECT id,name,slug,description,cover,accent FROM artists WHERE published=1 ORDER BY name LIMIT 500').all<Catalog['artists'][number]>(),
+      db.prepare('SELECT id,title,slug,artist_id AS artistId,year,cover,genre,release_type AS releaseType FROM albums WHERE published=1 ORDER BY year DESC,title LIMIT 500').all<Catalog['albums'][number]>(),
+      db.prepare('SELECT id,title,slug,artist_id AS artistId,album_id AS albumId,duration,audio_url AS audioUrl,cover,plays,track_number AS trackNumber,source_status AS sourceStatus,source_page AS sourcePage FROM tracks WHERE published=1 ORDER BY album_id,track_number LIMIT 1000').all<Catalog['tracks'][number]>()
     ])
-    return { artists: artists.results, albums: albums.results, tracks: tracks.results }
-  } catch (error) {
-    console.error('Error reading D1 music catalog', error)
-    throw createError({ statusCode: 503, statusMessage: 'Catálogo temporalmente no disponible' })
+    if(!a.results.length&&!b.results.length&&!t.results.length)return fallback
+    return {artists:a.results,albums:b.results,tracks:t.results}
+  }catch(e){
+    console.error('Error reading catalog from D1',e)
+    throw createError({statusCode:503,statusMessage:'Catálogo temporalmente no disponible'})
   }
 })

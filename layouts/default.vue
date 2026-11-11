@@ -38,7 +38,7 @@ function submitSearch(){if(search.value.trim())navigateTo('/buscar?q='+encodeURI
     <Search :size="19" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#898ca1]"/>
     <input v-model="search" aria-label="Buscar música" placeholder="Buscar canciones, artistas, álbumes..." class="h-11 w-full rounded-xl border border-white/[.06] bg-[#181b27] pl-12 pr-4 text-sm text-white outline-none placeholder:text-[#83879b] focus:border-violet-500/60"/>
    </form>
-   <div class="ml-auto hidden items-center gap-2 rounded-full border border-white/10 bg-[#181b27] px-4 py-2 text-xs font-semibold text-[#b7b9c6] sm:flex"><span class="h-2 w-2 rounded-full bg-emerald-400"/> Catálogo de demostración</div>
+   <div class="ml-auto hidden items-center gap-2 rounded-full border border-white/10 bg-[#181b27] px-4 py-2 text-xs font-semibold text-[#b7b9c6] sm:flex"><span class="h-2 w-2 rounded-full bg-emerald-400"/> 469 canciones · 3 artistas</div>
   </header>
   <main class="min-h-[calc(100vh-180px)] px-5 pb-40 pt-8 md:px-9"><slot/></main>
  </div>

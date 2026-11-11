@@ -1,0 +1,1 @@
+{"$schema":"node_modules/wrangler/config-schema.json","name":"webmusic","main":".output/server/index.mjs","assets":{"directory":".output/public"},"compatibility_date":"2025-07-17","compatibility_flags":["nodejs_compat"],"d1_databases":[{"binding":"DB","database_name":"webmusic","database_id":"PON_AQUI_EL_ID_REAL"}]}

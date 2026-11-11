@@ -1,55 +1,57 @@
 # WEBMUSIC 🎵
 
-Plataforma musical web, tipo biblioteca de artistas, álbumes y canciones, desarrollada con **Nuxt + Vue + TypeScript + Tailwind CSS**. Preparada para utilizar **Cloudflare D1**; el audio se reproduce exclusivamente a través de enlaces externos HTTPS autorizados.
+Plataforma musical en **Nuxt 4 + Vue 3 + TypeScript + Tailwind**, preparada para Cloudflare D1, SEO y futura aplicación Android.
 
-## Ejecutar localmente
+## Catálogo inicial importado de CSV
 
-Requisitos: Node.js 22 o superior y npm.
+| Artista | Álbumes | Canciones |
+| --- | ---: | ---: |
+| Alex Campos | 17 | 186 |
+| Alex Zurdo | 25 | 182 |
+| Barak | 7 | 101 |
+| **Total** | **49** | **469** |
 
-```bash
+Los enlaces de audio y portadas se conservan como URLs externas HTTPS. Las duraciones no estaban en los CSV y se muestran como desconocidas hasta que el audio transmita sus metadatos. Los registros se hallan en `server/data/catalog.json` (para iniciar sin D1) y `db/seed.sql` (importación SQL).
+
+**Importante:** la existencia de una URL y el estado ENCONTRADO de los archivos no verifican que se pueda reproducir, que el servidor permita hotlink o que haya permiso legal para transmitir las grabaciones. Comprueba las licencias antes de publicar música.
+
+## Ejecutar local
+
+Requiere Node.js 22 o superior.
+
+```powershell
 git clone https://github.com/Ronald22029/WEBMUSIC.git
 cd WEBMUSIC
 npm install
 npm run dev
 ```
 
-Abre http://localhost:3000.
-
-## Funciones implementadas
-
-- Inicio responsive con álbum destacado, artistas y canciones populares.
-- Buscador por artista, canción o álbum.
-- Rutas públicas de artistas y álbumes.
-- Reproductor global con pausa, avance, retroceso, repetición, aleatorio, volumen y cola.
-- API de catálogo `GET /api/catalog`.
-- Metadatos SEO por página, robots.txt y sitemap.xml inicial.
-- Esquema SQL inicial para D1.
-
-## Importante: datos de demostración
-
-Los artistas, álbumes y canciones iniciales son **ficticios**, y sus enlaces de audio están vacíos intencionalmente. La interfaz muestra un aviso al intentar reproducir hasta que se registren fuentes HTTPS de audio autorizadas. Las imágenes de demostración son externas. No se incluyen archivos musicales.
-
-Si no existe binding D1, la API muestra el catálogo ficticio. Si D1 está vinculado, la API lee las tablas reales. Una base D1 vacía mostrará una biblioteca vacía; se deben agregar datos antes de usarla.
+Abre http://localhost:3000. En local, la API usa el catálogo importado como alternativa cuando no hay base D1 vinculada.
 
 ## Cloudflare D1
 
-1. Crea una base de datos llamada `webmusic` desde Cloudflare.
-2. Sustituye `REEMPLAZAR_CON_ID_REAL` en `wrangler.jsonc` por el ID asignado.
-3. Aplica migraciones con Wrangler (requiere sesión iniciada en Cloudflare):
+1. Crea una base de datos D1 llamada `webmusic`.
+2. Copia `wrangler.example.jsonc` a `wrangler.jsonc` y reemplaza `PON_AQUI_EL_ID_REAL` por el UUID real.
+3. Aplica la migración y la semilla:
 
 ```bash
 npx wrangler d1 migrations apply webmusic --local
-npx wrangler d1 migrations apply webmusic --remote
+npx wrangler d1 execute webmusic --local --file=./db/seed.sql
+# Ejecuta --remote solo después de revisar derechos y configurar Cloudflare
 ```
 
-La integración de D1 usa `event.context.cloudflare.env.DB`; valida los bindings y el preset de despliegue en la versión de Nitro/Nuxt que instales antes de publicar. Configura `NUXT_PUBLIC_SITE_URL` con tu dominio definitivo.
+Para producción: configura `NUXT_PUBLIC_SITE_URL` con tu dominio, ejecuta `npm run build` y revisa el resultado antes de `npx wrangler deploy`. El preset de Nitro es `cloudflare_module` según la guía de Cloudflare para Nuxt/Nitro v2.
 
-## Estado y próximos pasos
+## Funciones disponibles
 
-**Fase inicial**: catálogo, UI, reproductor y esquema SQL. Aún no incluye autenticación, panel de administración, carga de canciones, búsqueda paginada en D1, registro de estadísticas persistentes, APK ni despliegue automático. El sitemap usa datos de demostración y debe conectarse al catálogo real antes de producción.
+- Catálogo importado: 3 artistas, 49 álbumes, 469 pistas.
+- Inicio responsive, páginas de artistas/álbumes y buscador simple de catálogo.
+- Reproductor HTML5 Audio para URL externa, cola, avance, repetición, aleatorio y volumen.
+- Sitemap básico y metadatos por página.
+- Esquema SQL para D1, todavía sin despliegue.
 
-No se ha ejecutado una compilación completa en este entorno. Realiza `npm install && npm run build` y `npm run typecheck` tras clonar.
+## Límites actuales
 
-## Derechos
+La API de D1 lee hasta 500 artistas, 500 álbumes y 1000 pistas por consulta: es un MVP; agregar paginación, servidor de búsqueda e índices especializados antes de escalar. El sitemap usa el JSON del repo, no una D1 que cambie en tiempo real. Autenticación, favoritos reales, playlists, editor de catálogo, API de importación y APK siguen pendientes.
 
-Solo incorpora enlaces de audio que tengas autorización para distribuir o reproducir. Algunos servidores bloquean streaming directo o reproducción desde sitios externos.
+La instalación/build no han sido ejecutados desde la conexión GitHub; se requiere validación con Node o CI.
