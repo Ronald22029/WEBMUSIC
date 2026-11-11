@@ -10,7 +10,11 @@ export default defineNuxtConfig({
   runtimeConfig: {
     adminPassword: '',
     adminSessionSecret: '',
-    public: { siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000' }
+    public: {
+      siteUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+      // Sólo para la prueba local. En una web pública se necesita Player ID propio.
+      dailymotionPlayerId: process.env.NUXT_PUBLIC_DAILYMOTION_PLAYER_ID || 'x8lr5'
+    }
   },
   app: {
     head: {

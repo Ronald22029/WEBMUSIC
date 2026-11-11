@@ -7,7 +7,6 @@ const { data } = useCatalog()
 const artist = computed(() => data.value.artists.find(a => a.id === p.current.value?.artistId))
 const album = computed(() => data.value.albums.find(a => a.id === p.current.value?.albumId))
 const videoTrack = computed(() => isDailymotionTrack(p.current.value))
-const videoUrl = computed(() => videoTrack.value ? 'https://www.dailymotion.com/embed/video/' + encodeURIComponent(p.current.value!.audioUrl.match(/(?:dai\.ly\/|video\/)([a-z0-9]+)/i)?.[1] || '') : '')
 const videoPage = computed(() => videoTrack.value ? p.current.value?.audioUrl : '')
 const cover = computed(() => p.current.value?.cover || album.value?.cover || '')
 const liked = computed(() => !!p.current.value && lib.isFavorite(p.current.value.id))
@@ -38,7 +37,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
             <span v-if="p.playing.value" class="absolute inset-x-0 bottom-0 flex h-6 items-center justify-center bg-black/65"><EqualizerBars active small/></span>
           </button>
           <div class="min-w-0 flex-1">
-            <div v-if="p.current.value" class="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-violet-300"><span class="h-1.5 w-1.5 rounded-full bg-violet-400" :class="{'wm-playing-dot':p.playing.value}"/>{{videoTrack?'Video de Dailymotion':p.buffering.value?'Cargando audio':p.playing.value?'Reproduciendo':'En pausa'}}</div>
+            <div v-if="p.current.value" class="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-violet-300"><span class="h-1.5 w-1.5 rounded-full bg-violet-400" :class="{'wm-playing-dot':p.playing.value}"/>{{videoTrack?(p.playing.value?'Reproduciendo desde Dailymotion':p.dmStatus.value==='blocked'?'Requiere video visible':'Audio externo de Dailymotion'):p.buffering.value?'Cargando audio':p.playing.value?'Reproduciendo':'En pausa'}}</div>
             <div v-else class="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-violet-300">Tu reproductor</div>
             <button class="block w-full truncate text-left text-[14px] font-extrabold leading-tight text-white hover:text-violet-200 sm:text-[15px]" :title="currentTitle" @click="p.expanded.value=true">{{currentTitle}}</button>
             <div class="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-[#a9adc1]">
@@ -61,8 +60,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <button class="wm-player-icon hidden md:flex" :aria-label="repeatLabel" :title="repeatLabel" :class="{'text-violet-300':p.repeatMode.value>0}" @click="p.cycleRepeat()"><Repeat1 v-if="p.repeatMode.value===2" :size="19"/><Repeat2 v-else :size="19"/></button>
         </div>
         <div class="col-span-2 md:col-span-1 md:col-start-2 md:row-start-2">
-          <p v-if="videoTrack" class="py-2 text-center text-[11px] text-violet-300">Video externo · Abrir reproductor para escuchar</p>
-          <ProgressTimeline v-else :position="p.position.value" :duration="p.duration.value" :playing="p.playing.value" :buffering="p.buffering.value" @seek="p.seek"/>
+          <ProgressTimeline :position="p.position.value" :duration="p.duration.value" :playing="p.playing.value" :buffering="p.buffering.value" @seek="p.seek"/>
         </div>
         <div class="hidden items-center justify-end gap-3 md:col-start-3 md:row-start-1 md:row-span-2 md:flex">
           <VolumeX v-if="!p.volume.value" :size="19" class="text-[#a1a5bc]"/>
@@ -81,14 +79,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <button class="flex items-center gap-2 rounded-full px-2 py-2 text-sm text-[#f2eafc] hover:bg-white/10" aria-label="Minimizar reproductor" @click="closeExpanded"><ChevronDown :size="22"/> Minimizar</button>
           <span class="text-[11px] font-extrabold uppercase tracking-[.16em] text-violet-200">Reproduciendo ahora</span>
         </header>
-        <div v-if="videoTrack" class="mb-7">
-          <div class="relative aspect-video overflow-hidden rounded-2xl border border-violet-400/25 bg-black shadow-2xl">
-            <iframe :key="p.current.value?.id" :src="videoUrl" :title="'Dailymotion: '+currentTitle" class="absolute inset-0 h-full w-full" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"/>
-          </div>
-          <p class="mt-3 text-center text-xs text-[#c7bdd7]">Video integrado desde Dailymotion. Si tu navegador bloquea el reproductor, puedes abrir la fuente original.</p>
-          <a v-if="videoPage" :href="videoPage" target="_blank" rel="noopener noreferrer" class="mx-auto mt-3 block w-fit rounded-full border border-white/20 px-5 py-2 text-center text-xs font-semibold text-violet-200 hover:bg-white/10">Abrir video original en Dailymotion ↗</a>
-        </div>
-        <div v-else class="relative mx-auto mb-9 w-[min(100%,320px)]">
+        <div class="relative mx-auto mb-9 w-[min(100%,320px)]">
           <div class="wm-disc" :class="{'wm-disc--playing':p.playing.value}"/>
           <div class="relative mx-auto aspect-square w-[92%] overflow-hidden rounded-[28px] border border-white/20 bg-[#29263d] shadow-[0_30px_80px_rgba(0,0,0,.6)]">
             <img v-if="cover" :src="cover" alt="" class="h-full w-full object-cover"/>
@@ -100,20 +91,25 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <div class="min-w-0 flex-1"><h2 class="truncate text-2xl font-black text-white" :title="currentTitle">{{currentTitle}}</h2><p class="mt-2 truncate text-sm text-[#c7c0d9]">{{currentArtist}}<span v-if="album"> · {{album.title}}</span></p></div>
           <button v-if="p.current.value" class="rounded-full bg-white/10 p-3 hover:bg-white/15" :aria-label="liked?'Quitar de favoritos':'Guardar favorito'" :aria-pressed="liked" @click="favorite"><Heart :size="21" :fill="liked?'currentColor':'none'" :class="{'text-violet-300':liked}"/></button>
         </div>
-        <div class="mt-8"><p v-if="videoTrack" class="rounded-lg bg-white/5 px-4 py-3 text-center text-xs text-[#c7b9dc]">Los controles de tiempo y volumen se manejan desde Dailymotion.</p>
-          <ProgressTimeline v-else large :position="p.position.value" :duration="p.duration.value" :playing="p.playing.value" :buffering="p.buffering.value" @seek="p.seek"/></div>
-        <div v-if="!videoTrack" class="mt-6 flex items-center justify-between gap-2">
+        <div v-if="videoTrack" class="mt-5 rounded-xl border border-violet-400/20 bg-violet-400/[.08] p-3 text-center text-xs text-[#ddd0f4]">
+          Reproducción experimental de Dailymotion. El video puede requerir visibilidad.
+          <button class="ml-2 inline-flex items-center rounded-full bg-white/10 px-3 py-2 font-semibold text-white hover:bg-white/20" @click="p.dmShowVideo.value=!p.dmShowVideo.value">{{p.dmShowVideo.value?'Ocultar video':'Mostrar video'}}</button>
+          <a :href="videoPage||'#'" target="_blank" rel="noopener noreferrer" class="ml-2 inline-flex rounded-full bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Abrir Dailymotion ↗</a>
+        </div>
+        <div class="mt-8"><ProgressTimeline large :position="p.position.value" :duration="p.duration.value" :playing="p.playing.value" :buffering="p.buffering.value" @seek="p.seek"/></div>
+        <div class="mt-6 flex items-center justify-between gap-2">
           <button class="rounded-full p-3 text-[#d1c6e9]" :aria-pressed="p.shuffle.value" aria-label="Aleatorio" :class="{'text-violet-300':p.shuffle.value}" @click="p.shuffle.value=!p.shuffle.value"><Shuffle :size="21"/></button>
           <button class="rounded-full p-2" aria-label="Anterior" @click="p.previous()"><SkipBack :size="26" fill="currentColor"/></button>
           <button class="flex h-16 w-16 items-center justify-center rounded-full bg-white text-[#1f1730] shadow-2xl transition hover:scale-105" :disabled="!p.current.value" :aria-label="p.playing.value?'Pausar':'Reproducir'" @click="p.toggle()"><Loader2 v-if="p.buffering.value" :size="25" class="animate-spin"/><Pause v-else-if="p.playing.value" :size="26" fill="currentColor"/><Play v-else :size="26" fill="currentColor"/></button>
           <button class="rounded-full p-2" aria-label="Siguiente" @click="p.next()"><SkipForward :size="26" fill="currentColor"/></button>
           <button class="rounded-full p-3 text-[#d1c6e9]" :aria-label="repeatLabel" :class="{'text-violet-300':p.repeatMode.value>0}" @click="p.cycleRepeat()"><Repeat1 v-if="p.repeatMode.value===2" :size="22"/><Repeat2 v-else :size="22"/></button>
         </div>
-        <div v-if="!videoTrack" class="mt-7 flex items-center gap-3 text-[#c9c0db]"><Volume2 :size="20"/><input aria-label="Volumen" type="range" min="0" max="1" step=".01" class="flex-1" :value="p.volume.value" @input="setVolume"/></div>
-        <p class="mt-7 text-center text-xs text-[#ada4bc]">{{videoTrack?'Reproductor oficial de Dailymotion · Sin descargar ni extraer audio':'Reproducción mediante enlace externo · Disponibilidad según su servidor'}}</p>
+        <div class="mt-7 flex items-center gap-3 text-[#c9c0db]"><Volume2 :size="20"/><input aria-label="Volumen" type="range" min="0" max="1" step=".01" class="flex-1" :value="p.volume.value" @input="setVolume"/></div>
+        <p class="mt-7 text-center text-xs text-[#ada4bc]">{{videoTrack?'Prueba local de Dailymotion: la plataforma puede exigir mostrar el video':'Reproducción mediante enlace externo · Disponibilidad según su servidor'}}</p>
       </div>
     </section>
   </Transition>
+  <DailymotionExperiment v-if="videoTrack" />
 </Teleport>
 </template>
 <style scoped>
