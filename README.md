@@ -1,23 +1,12 @@
 # WEBMUSIC 🎵
 
-Plataforma musical en **Nuxt 4 + Vue 3 + TypeScript + Tailwind**, preparada para Cloudflare D1, SEO y futura aplicación Android.
+Biblioteca musical basada en Nuxt, Vue 3 y TypeScript, con reproducción mediante enlaces externos.
 
-## Catálogo inicial importado de CSV
+## Catálogo actual
+3 artistas, 49 álbumes y 469 canciones importadas desde los CSV proporcionados, con URLs externas y portadas, orden de pista y año.
 
-| Artista | Álbumes | Canciones |
-| --- | ---: | ---: |
-| Alex Campos | 17 | 186 |
-| Alex Zurdo | 25 | 182 |
-| Barak | 7 | 101 |
-| **Total** | **49** | **469** |
-
-Los enlaces de audio y portadas se conservan como URLs externas HTTPS. Las duraciones no estaban en los CSV y se muestran como desconocidas hasta que el audio transmita sus metadatos. Los registros se hallan en `server/data/catalog.json` (para iniciar sin D1) y `db/seed.sql` (importación SQL).
-
-**Importante:** la existencia de una URL y el estado ENCONTRADO de los archivos no verifican que se pueda reproducir, que el servidor permita hotlink o que haya permiso legal para transmitir las grabaciones. Comprueba las licencias antes de publicar música.
-
-## Ejecutar local
-
-Requiere Node.js 22 o superior.
+## Ejecutar en Windows
+Requiere Node 22 o superior.
 
 ```powershell
 git clone https://github.com/Ronald22029/WEBMUSIC.git
@@ -26,32 +15,51 @@ npm install
 npm run dev
 ```
 
-Abre http://localhost:3000. En local, la API usa el catálogo importado como alternativa cuando no hay base D1 vinculada.
+Abre http://localhost:3000.
+
+## Funciones disponibles
+- Inicio con álbum destacado, discografías y artistas.
+- Navegación responsive, barra de búsqueda con sugerencias, filtros y ordenamientos por artista, año y nombre.
+- Página de canciones con paginación visual (30 canciones por página).
+- Reproductor único global HTML5 Audio con cola, controles multimedia, barra de tiempo, repetir, aleatorio, volumen y álbum animado en pantalla completa.
+- Ecualizador **visual animado** (no representa frecuencia real), indicador de buffering, mensajes de error y modo de movimiento reducido.
+- Favoritos e historial local en el navegador, sin cuenta.
+- SEO base, rutas de artista/álbum, sitemap y robots.
+- Preparado para Cloudflare D1, con esquema SQL y seed.
+
+## Añadir nuevos artistas mediante CSV
+Mueve nuevos archivos CSV a una carpeta en tu computadora. Los archivos deben seguir el formato de los anteriores e incluir `artista,album,cancion,url_audio`. Recomendados: `artista_slug,anio,numero_pista,genero,tipo_lanzamiento,url_portada,url_cancion`.
+
+```powershell
+npm run import -- ".\nuevos\artista_1.csv" ".\nuevos\artista_2.csv"
+npm run dev
+```
+
+El importador procesa CSV entrecomillados correctamente, fusiona por ID estable, preserva artistas previos y regenerará:
+- `server/data/catalog.json`: el catálogo usado localmente sin D1
+- `db/seed.sql`: datos SQL para D1
+
+Vuelve a ejecutar el comando sin duplicar los registros equivalentes. Revisa el resumen de registros nuevos, actualizados y omitidos. **No debes editar el código cada vez que agregues artistas.**
+
+> Precaución: el nombre, número de pista y álbum determinan una clave estable. Si cambias estos datos en un CSV antiguo, el importador puede interpretarlos como una pista distinta; revisa duplicados antes de publicar.
 
 ## Cloudflare D1
-
-1. Crea una base de datos D1 llamada `webmusic`.
-2. Copia `wrangler.example.jsonc` a `wrangler.jsonc` y reemplaza `PON_AQUI_EL_ID_REAL` por el UUID real.
-3. Aplica la migración y la semilla:
-
+1. Crea una D1 llamada `webmusic`.
+2. Copia `wrangler.example.jsonc` a `wrangler.jsonc` y rellena el ID verdadero (el archivo local no se versiona).
+3. Para el entorno local:
 ```bash
 npx wrangler d1 migrations apply webmusic --local
 npx wrangler d1 execute webmusic --local --file=./db/seed.sql
-# Ejecuta --remote solo después de revisar derechos y configurar Cloudflare
 ```
+4. Para remotos, usa `--remote` **solo cuando estés listo** y se hayan verificado derechos y fuentes.
 
-Para producción: configura `NUXT_PUBLIC_SITE_URL` con tu dominio, ejecuta `npm run build` y revisa el resultado antes de `npx wrangler deploy`. El preset de Nitro es `cloudflare_module` según la guía de Cloudflare para Nuxt/Nitro v2.
+El backend usa D1 cuando el binding `DB` está disponible; en local sin binding usa el JSON. Por ahora el backend devuelve como máximo 500 artistas, 500 álbumes y 1000 pistas; antes de escalar se deben implementar paginación SQL y búsqueda indexada del lado del servidor.
 
-## Funciones disponibles
-
-- Catálogo importado: 3 artistas, 49 álbumes, 469 pistas.
-- Inicio responsive, páginas de artistas/álbumes y buscador simple de catálogo.
-- Reproductor HTML5 Audio para URL externa, cola, avance, repetición, aleatorio y volumen.
-- Sitemap básico y metadatos por página.
-- Esquema SQL para D1, todavía sin despliegue.
-
-## Límites actuales
-
-La API de D1 lee hasta 500 artistas, 500 álbumes y 1000 pistas por consulta: es un MVP; agregar paginación, servidor de búsqueda e índices especializados antes de escalar. El sitemap usa el JSON del repo, no una D1 que cambie en tiempo real. Autenticación, favoritos reales, playlists, editor de catálogo, API de importación y APK siguen pendientes.
-
-La instalación/build no han sido ejecutados desde la conexión GitHub; se requiere validación con Node o CI.
+## Estado y advertencias
+- **No se ha comprobado la reproducción real de los enlaces de audio.** Un enlace puede bloquear hotlink, necesitar autenticación o estar roto.
+- La presencia de un enlace en CSV no acredita permiso para transmitir música comercial. Verifica los derechos de reproducción y licencias correspondientes antes de publicar una web pública.
+- La duración está ausente de los CSV, se muestra cuando el navegador la detecta.
+- Los favoritos e historial solo están en el navegador actual, no sincronizados entre dispositivos.
+- El ecualizador es una animación decorativa, no un analizador del audio.
+- Autenticación, playlists sincronizadas, administración visual, API para importaciones, búsqueda server-side, APK y despliegue están pendientes.
+- `npm run build` se verifica mediante GitHub Actions; no se ha verificado reproducción de enlaces por navegador.

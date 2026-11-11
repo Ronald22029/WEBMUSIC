@@ -1,9 +1,31 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 :root{color-scheme:dark}
-html,body,#__nuxt{min-height:100%;background:#090b12;color:#f7f8fd;font-family:Inter,system-ui,sans-serif}
-body{margin:0}button,input{font:inherit}button{cursor:pointer}
+html,body,#__nuxt{min-height:100%;background:#080a11;color:#f7f8fd;font-family:Inter,system-ui,sans-serif}
+html{scroll-behavior:smooth}
+body{margin:0}
+button,input{font:inherit}
+button{cursor:pointer}
+button:disabled{cursor:not-allowed;opacity:.5}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #a78bfa;outline-offset:3px}
+::selection{background:#7c3aed;color:white}
 .scrollbar-hide::-webkit-scrollbar{display:none}
-input[type=range]{accent-color:#a68cff}
+input[type=range]{accent-color:#a78bfa}
+.motion-appear{animation:appear .38s cubic-bezier(.2,.9,.3,1) both}
+.motion-rise{animation:rise .5s cubic-bezier(.2,.9,.3,1) both}
+.motion-glow{animation:glow 5s ease-in-out infinite alternate}
+.motion-disc{animation:rotateDisc 14s linear infinite}
+.motion-paused{animation-play-state:paused}
+.music-shimmer{position:relative;isolation:isolate;overflow:hidden}
+.music-shimmer::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.05) 48%,transparent 70%);transform:translateX(-130%);animation:shimmer 5s ease-in-out infinite}
+@keyframes appear{from{opacity:0}to{opacity:1}}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes rotateDisc{to{transform:rotate(360deg)}}
+@keyframes glow{from{filter:brightness(1)}to{filter:brightness(1.26)}}
+@keyframes shimmer{0%,65%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+@media(prefers-reduced-motion:reduce){
+ html{scroll-behavior:auto}
+ *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
