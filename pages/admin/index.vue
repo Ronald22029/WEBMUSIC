@@ -3,7 +3,7 @@ import { ArrowLeft, UploadCloud, Database, Music2, Disc3, Users, FileSpreadsheet
 
 definePageMeta({ layout: false })
 useSeoMeta({title:'Administración | WEBMUSIC',robots:'noindex,nofollow'})
-type Session = { authenticated:boolean; configured:boolean; database:boolean }
+type Session = { authenticated:boolean; configured:boolean; database:boolean; storage?:'local'|'cloudflare' }
 type Summary = { tracks:number; artists:number; albums:number; skipped:number }
 type Preview = { summary:Summary; warnings:string[]; sample:Array<{artist:string;album:string;track:string;year:number;trackNumber:number}> }
 type TrackRow = { id:string; title:string; artistId?:string; artistName?:string; audioUrl:string; published:number; sourceStatus?:string; cover?:string }
@@ -16,7 +16,7 @@ const csv=ref('')
 const filename=ref('')
 const preview=ref<Preview|null>(null)
 const licensed=ref(false)
-const stats=ref<{database:boolean;artists:number;albums:number;tracks:number;message?:string}|null>(null)
+const stats=ref<{database:boolean;artists:number;albums:number;tracks:number;storage?:'local'|'cloudflare';message?:string}|null>(null)
 const trackRows=ref<TrackRow[]>([])
 const trackTotal=ref(0)
 const trackSearch=ref('')
@@ -28,6 +28,7 @@ const editPublished=ref(true)
 const tab=ref<'import'|'tracks'>('import')
 const isAuthorized=computed(()=>session.value?.authenticated===true)
 const isDatabaseReady=computed(()=>session.value?.database===true)
+const isLocal=computed(()=>session.value?.storage==='local')
 async function login(){
  busy.value=true;failure.value='';feedback.value=''
  try {
@@ -79,7 +80,8 @@ async function importCsv(){
  busy.value=true;failure.value='';feedback.value=''
  try{
   const result=await $fetch<{message:string}>('/api/admin/import',{method:'POST',body:{csv:csv.value,authorized:licensed.value}})
-  feedback.value=result.message+' · Actualiza el catálogo para ver los cambios.'
+  feedback.value=result.message
+  await refreshNuxtData('music-catalog')
   csv.value='';filename.value='';preview.value=null;licensed.value=false
   await loadStats()
  }catch(e:any){failure.value=e?.data?.statusMessage||'No se pudo importar'}
@@ -95,6 +97,7 @@ async function save(){
  try{
   await $fetch('/api/admin/tracks/'+encodeURIComponent(selected.value.id),{method:'PATCH',body:{title:editTitle.value,audioUrl:editUrl.value,published:editPublished.value}})
   feedback.value='Canción actualizada correctamente.'
+  await refreshNuxtData('music-catalog')
   selected.value=null;await loadTracks()
  }catch(e:any){failure.value=e?.data?.statusMessage||'No se pudo guardar'}
  finally{busy.value=false}
@@ -128,15 +131,17 @@ watch(isAuthorized,ok=>{if(ok)void loadStats()},{immediate:true})
     <button :disabled="busy" class="mt-5 h-12 w-full rounded-xl bg-violet-500 font-extrabold transition hover:bg-violet-400">{{busy?'Verificando…':'Entrar al panel'}}</button>
   </form>
   <div v-else>
-   <div v-if="!isDatabaseReady" class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/[.07] p-4"><AlertTriangle :size="20" class="mt-0.5 shrink-0 text-amber-300"/><div><p class="text-sm font-bold">Cloudflare D1 no está conectado</p><p class="mt-1 text-xs leading-6 text-[#d5c9c5]">Puedes explorar el catálogo de demostración y previsualizar CSV. Para guardar cambios o importar datos es obligatorio configurar la base D1.</p></div></div>
+   <div v-if="!isDatabaseReady" class="mb-6 flex items-start gap-3 rounded-2xl border border-amber-400/20 bg-amber-500/[.07] p-4"><AlertTriangle :size="20" class="mt-0.5 shrink-0 text-amber-300"/><div><p class="text-sm font-bold">Cloudflare D1 no está conectado</p><p class="mt-1 text-xs leading-6 text-[#d5c9c5]">No hay almacenamiento de datos disponible.</p></div></div>
    <div v-if="feedback" role="status" class="mb-5 rounded-xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-sm text-emerald-200">{{feedback}}</div>
    <div v-if="failure" role="alert" class="mb-5 rounded-xl border border-rose-400/20 bg-rose-500/10 p-4 text-sm text-rose-200">{{failure}}</div>
    <div class="mb-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
-    <div v-for="item in [{label:'Artistas',value:stats?.artists??'—',icon:Users},{label:'Álbumes',value:stats?.albums??'—',icon:Disc3},{label:'Canciones',value:stats?.tracks??'—',icon:Music2},{label:'Base de datos',value:isDatabaseReady?'Conectada':'No conectada',icon:Database}]" :key="item.label" class="rounded-2xl border border-white/[.06] bg-[#1a1d2a] p-5"><component :is="item.icon" :size="20" class="text-violet-400"/><div class="mt-4 text-2xl font-black">{{item.value}}</div><p class="mt-1 text-xs text-[#9ca0b4]">{{item.label}}</p></div>
+    <div v-for="item in [{label:'Artistas',value:stats?.artists??'—',icon:Users},{label:'Álbumes',value:stats?.albums??'—',icon:Disc3},{label:'Canciones',value:stats?.tracks??'—',icon:Music2},{label:'Almacenamiento',value:isLocal?'Local':(isDatabaseReady?'Cloudflare':'No disponible'),icon:Database}]" :key="item.label" class="rounded-2xl border border-white/[.06] bg-[#1a1d2a] p-5"><component :is="item.icon" :size="20" class="text-violet-400"/><div class="mt-4 text-2xl font-black">{{item.value}}</div><p class="mt-1 text-xs text-[#9ca0b4]">{{item.label}}</p></div>
    </div>
-   <div class="mb-6 flex flex-wrap gap-2"><button class="rounded-xl px-5 py-3 text-sm font-bold transition" :class="tab==='import'?'bg-violet-500 text-white':'bg-[#1e2130] text-[#b6b8c8] hover:text-white'" @click="changeTab('import')"><UploadCloud :size="17" class="mr-2 inline"/> Importar CSV</button><button class="rounded-xl px-5 py-3 text-sm font-bold transition" :class="tab==='tracks'?'bg-violet-500 text-white':'bg-[#1e2130] text-[#b6b8c8] hover:text-white'" @click="changeTab('tracks')"><Music2 :size="17" class="mr-2 inline"/> Canciones</button></div>
+   <div class="mb-6 flex flex-wrap items-center gap-2">
+    <NuxtLink v-if="isLocal" to="/admin/catalogo" class="inline-flex items-center gap-2 rounded-xl border border-violet-400/20 bg-violet-500/10 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-violet-500/20"><Users :size="17"/> Gestionar artistas y álbumes</NuxtLink>
+    <button class="rounded-xl px-5 py-3 text-sm font-bold transition" :class="tab==='import'?'bg-violet-500 text-white':'bg-[#1e2130] text-[#b6b8c8] hover:text-white'" @click="changeTab('import')"><UploadCloud :size="17" class="mr-2 inline"/> Importar CSV</button><button class="rounded-xl px-5 py-3 text-sm font-bold transition" :class="tab==='tracks'?'bg-violet-500 text-white':'bg-[#1e2130] text-[#b6b8c8] hover:text-white'" @click="changeTab('tracks')"><Music2 :size="17" class="mr-2 inline"/> Canciones</button><a v-if="isLocal" href="/api/admin/export" download="webmusic-catalog-backup.json" class="ml-auto rounded-xl border border-white/15 px-5 py-3 text-sm font-bold text-violet-200 hover:bg-white/10">Descargar copia de seguridad</a></div>
    <div v-if="tab==='import'" class="rounded-2xl border border-white/[.07] bg-[#191c29] p-5 sm:p-8">
-    <div class="flex items-center gap-3"><FileSpreadsheet :size="25" class="text-violet-300"/><div><h2 class="text-xl font-black">Agregar artistas y canciones</h2><p class="mt-1 text-sm text-[#a4a7b8]">Carga un CSV con el formato utilizado anteriormente.</p></div></div>
+    <div class="flex items-center gap-3"><FileSpreadsheet :size="25" class="text-violet-300"/><div><h2 class="text-xl font-black">Agregar artistas y canciones</h2><p class="mt-1 text-sm text-[#a4a7b8]">Carga un CSV con el formato utilizado anteriormente. Los datos se guardarán en {{isLocal?'tu computadora':'Cloudflare D1'}}.</p></div></div>
     <label class="mt-6 flex min-h-[170px] cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-violet-500/25 bg-violet-500/[.04] p-6 text-center transition hover:border-violet-400/50">
      <UploadCloud :size="34" class="mb-3 text-violet-300"/><span class="font-bold">{{filename||'Selecciona un archivo CSV'}}</span><span class="mt-2 text-xs text-[#a0a4b7]">Máximo 650 KB y 750 registros por archivo</span>
      <input type="file" accept=".csv,text/csv" class="sr-only" @change="chooseFile"/>
@@ -148,7 +153,7 @@ watch(isAuthorized,ok=>{if(ok)void loadStats()},{immediate:true})
      <div class="mt-5 overflow-x-auto"><table class="w-full min-w-[550px] text-left text-sm"><thead class="text-xs text-[#9498aa]"><tr><th class="py-3">Artista</th><th>Álbum</th><th>Canción</th><th>Año</th></tr></thead><tbody><tr v-for="(item,i) in preview.sample" :key="i" class="border-t border-white/[.06]"><td class="py-3">{{item.artist}}</td><td>{{item.album}}</td><td>{{item.track}}</td><td>{{item.year||'—'}}</td></tr></tbody></table></div>
      <div v-if="preview.warnings.length" class="mt-5 rounded-xl border border-amber-400/15 bg-amber-500/[.06] p-4"><p class="text-sm font-bold text-amber-200">Advertencias del archivo</p><p v-for="(w,i) in preview.warnings" :key="i" class="mt-2 text-xs text-amber-100/80">{{w}}</p></div>
      <label class="mt-6 flex items-start gap-3 text-sm text-[#c6c6d1]"><input v-model="licensed" type="checkbox" class="mt-1 accent-violet-500"/><span>Confirmo que tengo autorización para utilizar estos enlaces de audio y publicarlos en mi plataforma.</span></label>
-     <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-6 py-3 text-sm font-bold transition hover:bg-violet-400 disabled:opacity-40" :disabled="!licensed||!isDatabaseReady||busy" @click="importCsv"><CheckCircle2 :size="18"/> Importar a Cloudflare D1</button>
+     <button class="mt-5 inline-flex items-center gap-2 rounded-xl bg-violet-500 px-6 py-3 text-sm font-bold transition hover:bg-violet-400 disabled:opacity-40" :disabled="!licensed||!isDatabaseReady||busy" @click="importCsv"><CheckCircle2 :size="18"/> {{isLocal?'Guardar en mi computadora':'Importar a Cloudflare D1'}}</button>
     </div>
    </div>
    <div v-else class="rounded-2xl border border-white/[.07] bg-[#191c29] p-5 sm:p-7">

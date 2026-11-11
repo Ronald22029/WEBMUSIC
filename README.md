@@ -1,10 +1,19 @@
-# WEBMUSIC 🎵
+# WEBMUSIC — Plataforma musical local 🎵
 
-Aplicación musical Nuxt + TypeScript con biblioteca, reproductor y administración protegida. Las canciones utilizan enlaces HTTPS externos: **no se almacenan archivos de audio en el proyecto**.
+WEBMUSIC es una biblioteca musical desarrollada con Nuxt, Vue 3, TypeScript y Tailwind CSS. Los enlaces de audio y portada son externos: **no se descargan ni almacenan archivos de música**.
 
-## Inicio rápido (Windows)
+## Ahora TODO se desarrolla en tu PC
 
-Requiere Node.js 22+:
+No necesitas crear cuentas de Cloudflare, Firebase, Vercel ni contratar un servidor. La web y el panel de administración funcionan localmente y los cambios se conservan al apagar el equipo.
+
+La base de datos actual para desarrollo es un archivo privado:
+`.data/webmusic/catalog.local.json`. Al modificar canciones o importar CSV, el servidor actualiza este archivo mediante una escritura atómica y mantiene `.data/webmusic/catalog.local.json.bak` como copia del estado anterior.
+
+La carpeta `.data/` está excluida de Git. **No ejecutes `git clean -fdx` ni borres `.data` sin guardar tu respaldo.**
+
+## 1. Instalar y ejecutar
+
+Requisitos: Node.js 22 o superior y Git.
 
 ```powershell
 git clone https://github.com/Ronald22029/WEBMUSIC.git
@@ -13,72 +22,88 @@ npm install
 npm run dev
 ```
 
-Visita http://localhost:3000. El catálogo JSON provisional incluye **3 artistas, 49 álbumes y 469 canciones**; la disponibilidad de los enlaces externos no se ha verificado.
+Accede a: http://localhost:3000.
 
-## Panel de administración
-
-URL: **http://localhost:3000/admin**
-
-El panel está **deshabilitado por defecto**. Para habilitarlo en local crea un archivo `.env` en la raíz del proyecto (nunca lo subas a GitHub) y define:
-
-```dotenv
-NUXT_ADMIN_PASSWORD=UNA_CONTRASENA_LARGA_Y_UNICA
-NUXT_ADMIN_SESSION_SECRET=UN_SECRETO_ALEATORIO_LARGO_DE_AL_MENOS_32_CARACTERES
-```
-
-**Reemplaza ambos ejemplos por valores privados y aleatorios.** La contraseña necesita al menos 12 caracteres; el secreto, al menos 32. Reinicia `npm run dev` tras guardar el archivo.
-
-Puedes entrar, consultar estadísticas y **previsualizar CSV sin D1**, pero el guardado/importación remota estará deshabilitado hasta vincular la base. El panel permite:
-
-- Buscar y ver canciones mediante paginación.
-- Editar título, URL de audio y visibilidad de una canción (requiere D1).
-- Cargar un CSV con el formato original, previsualizarlo y revisar registros omitidos.
-- Confirmar permiso de uso de los audios antes de importarlos en D1.
-
-La autenticación administrativa usa sesión firmada HMAC, cookie HttpOnly y SameSite=Strict. Se valida autorización en el servidor en **todas las rutas de administración**, no solo en la interfaz. Existe un control básico anti-intentos repetidos por instancia; **en producción configura también WAF / rate limiting de Cloudflare**. No uses la contraseña administrativa de desarrollo como credencial de producción.
-
-### Configurar Cloudflare D1
-
-1. Crea una cuenta/proyecto Cloudflare y una base D1 llamada `webmusic`.
-2. Copia `wrangler.example.jsonc` a `wrangler.jsonc`, reemplazando `PON_AQUI_EL_ID_REAL` por el identificador verdadero.
-3. Ejecuta:
-
-```bash
-npx wrangler d1 migrations apply webmusic --local
-npx wrangler d1 execute webmusic --local --file=./db/seed.sql
-```
-
-Para usar D1 desde el panel, ejecuta el proyecto con un binding `DB` disponible en el runtime Cloudflare (por ejemplo mediante Wrangler). El dev server estándar de Nuxt sin el binding mostrará solo la vista previa.
-
-En Cloudflare añade `ADMIN_PASSWORD` y `ADMIN_SESSION_SECRET` como **secrets de Worker**, nunca como variables públicas ni en Git. Opcionalmente Nuxt puede leer las variables privadas `NUXT_ADMIN_PASSWORD` y `NUXT_ADMIN_SESSION_SECRET`.
-
-Para producción, aplica migraciones con `--remote` y considera importar `db/seed.sql` **únicamente después de revisar las autorizaciones de distribución de los audios**. La versión inicial del catálogo todavía está en el JSON versionado.
-
-### CSV compatible
-
-Columnas obligatorias: `artista,album,cancion,url_audio`.
-Recomendadas: `artista_slug,anio,numero_pista,genero,tipo_lanzamiento,url_portada,url_cancion`.
-
-Desde el navegador, los CSV se procesan en lotes de **hasta 750 registros o 650 KB** para evitar límites de Workers y D1. El importador evita duplicados idénticos mediante identificadores estables de artista, álbum y número/título de pista, y usa operaciones SQL parametrizadas. La importación reintenta por lotes sin crear nuevos duplicados de los mismos IDs.
-
-Para una importación local sin D1 también existe:
+Si ya lo tienes instalado:
 
 ```powershell
-npm run import -- ".\nuevos\artista_1.csv" ".\nuevos\artista_2.csv"
+cd C:\WEBMUSIC
+git pull origin main
+npm install
+npm run dev
 ```
 
-Este comando reescribe `server/data/catalog.json` y `db/seed.sql` sin eliminar registros existentes.
+## 2. Habilitar administrador local
 
-## Estado del producto
+Crea `.env` en la raíz del proyecto. Añade **valores tuyos**, distintos de los ejemplos:
 
-**Disponible:** catálogo, páginas de artista/álbum, búsqueda básica, filtros, reproducción con HTML5 Audio, reproductor animado, biblioteca local, SEO inicial, panel administrador con acceso protegido, CSV preview, importación D1, edición básica de canciones.
+```dotenv
+NUXT_ADMIN_PASSWORD=CONTRASENA_PRIVADA_DE_12_O_MAS_CARACTERES
+NUXT_ADMIN_SESSION_SECRET=SECRETO_PRIVADO_ALEATORIO_DE_32_O_MAS_CARACTERES
+```
 
-**Pendiente:** publicar en Cloudflare, configurar D1 real, CRUD de artistas/álbumes completo, perfiles de usuario, favoritos sincronizados, playlists, búsqueda SQL indexada y paginada, sitemap desde D1, app Android y validaciones reales de derechos y reproducción de cada enlace.
+En PowerShell, para generar un secreto de sesión seguro puedes ejecutar:
 
-El catálogo público cuando D1 está vinculado usa un límite temporal de 500 artistas, 500 álbumes y 1000 pistas. **No es una implementación para millones de canciones**: antes de crecer hay que reemplazar ese endpoint por consultas paginadas, búsqueda indexada y caché. La importación web puede hacer visible música recién agregada en D1, pero el sitemap sigue dependiendo del catálogo versionado hasta la siguiente fase.
+```powershell
+-join ((1..48) | ForEach-Object { '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[(Get-Random -Maximum 62)] })
+```
 
-## Seguridad y derechos
+Reinicia el servidor después de crear o cambiar el archivo `.env`. El panel está en:
 
-No subir archivos `.env`, secretos, contraseñas ni claves API al repositorio.
+**http://localhost:3000/admin**
 
-Un URL de audio encontrado en un CSV **no demuestra** que sea una fuente autorizada, que funcione ni que permita hotlinking. Solo publica fuentes para las que dispongas de autorización de reproducción pública. Los datos del CSV original se mantienen en el repositorio como referencia provisional hasta realizar la revisión.
+Funciones locales:
+- Inicio de sesión administrativo protegido (cookie HttpOnly + firma HMAC).
+- Estadísticas: artistas, álbumes y canciones.
+- Importación de CSV (máximo 750 canciones o 650 KB por archivo).
+- Vista previa con advertencias antes de guardar.
+- Detección de duplicados por identificador estable.
+- Edición de título, URL HTTPS de audio y visibilidad de cada canción.
+- Descarga de copia de seguridad JSON.
+- Actualización del catálogo del sitio sin editar archivos de código.
+
+**Las importaciones quedan en el servidor local, no en GitHub.** Si modificas tu código con `git pull`, no reemplaza los cambios guardados en `.data/`.
+
+## 3. Catálogo inicial y nuevas importaciones
+
+El proyecto arranca con una biblioteca incorporada de **3 artistas, 49 álbumes y 469 canciones**. Al primer cambio administrativo, copia el catálogo inicial a `.data/`, donde ya puedes seguir agregando canciones.
+
+CSV admitido: columnas `artista,album,cancion,url_audio`. Opcionales: `artista_slug,anio,numero_pista,genero,tipo_lanzamiento,url_portada,url_cancion`.
+
+Para importar desde el navegador:
+1. Abre el panel administrativo.
+2. Selecciona un CSV.
+3. Haz clic en **Verificar y previsualizar**.
+4. Revisa registros omitidos y duplicados; confirma que tienes permiso para utilizar los audios.
+5. Haz clic en **Guardar en mi computadora**.
+
+La biblioteca pública mostrará esos cambios al actualizar la página. Las URLs deben permitir reproducción desde el navegador; no están verificadas automáticamente.
+
+También puedes usar el importador del repositorio, que modifica `server/data/catalog.json`, pero para trabajar normalmente **utiliza el panel web**; así mantienes los datos privados separados del código.
+
+## 4. Respaldos
+
+En `/admin` encontrarás **Descargar copia de seguridad**: exporta todo el catálogo como JSON.
+
+Alternativamente copia estos archivos a una carpeta de respaldo:
+
+- `.data/webmusic/catalog.local.json` (catálogo editable).
+- `.data/webmusic/catalog.local.json.bak` (estado anterior al último guardado).
+
+El almacenamiento es local, así que no se sincroniza con otro equipo automáticamente. Al reinstalar Windows o mover el proyecto, conserva esta carpeta.
+
+## 5. Cloudflare, más adelante
+
+No hace falta Cloudflare en esta fase. Conservamos un esquema SQL y una capa de acceso a datos para integrar D1 posteriormente, cuando quieras lanzar el sitio público.
+
+Para compilar en local, el preset predeterminado es Node.js. El despliegue Cloudflare queda desactivado hasta que configuremos `NITRO_PRESET=cloudflare_module` y su binding D1. La migración de los cambios locales a D1 necesitará una importación propia en esa fase.
+
+## 6. Pendientes
+
+- Ampliar el panel con creación/edición completa de artistas y álbumes.
+- Pruebas reales de reproducción y permisos de los enlaces externos.
+- Cuentas, playlists y sincronización.
+- Búsqueda paginada sobre una base real para catálogos mucho mayores.
+- APK Android y despliegue público.
+
+**Derechos:** encontrar una URL de música en internet no acredita que sea legal retransmitirla. Solo publica música con autorización o licencias aplicables.

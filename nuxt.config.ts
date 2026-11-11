@@ -1,10 +1,12 @@
+// Desarrollo local por defecto. Cloudflare queda para una etapa posterior.
+// Para compilar como Cloudflare Worker en el futuro, configura NITRO_PRESET=cloudflare_module.
 export default defineNuxtConfig({
   srcDir: '.',
   compatibilityDate: '2025-07-17',
   modules: ['@nuxtjs/tailwindcss'],
   css: ['~/assets/css/main.css'],
   devtools: { enabled: true },
-  nitro: { preset: 'cloudflare_module' },
+  nitro: { preset: process.env.NITRO_PRESET || 'node-server' },
   runtimeConfig: {
     adminPassword: '',
     adminSessionSecret: '',
