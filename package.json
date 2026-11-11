@@ -1,0 +1,22 @@
+{
+  "name": "webmusic",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "nuxt": "^4.2.0",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "lucide-vue-next": "^0.468.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "vue-tsc": "^2.2.0",
+    "wrangler": "^4.0.0"
+  }
+}

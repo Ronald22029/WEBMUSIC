@@ -1,0 +1,9 @@
+<script setup lang="ts">
+import {Play,Disc3} from 'lucide-vue-next'
+const route=useRoute(),{data}=useCatalog(),p=usePlayer()
+const album=computed(()=>data.value.albums.find(a=>a.slug===route.params.slug))
+const artist=computed(()=>data.value.artists.find(a=>a.id===album.value?.artistId))
+const tracks=computed(()=>data.value.tracks.filter(t=>t.albumId===album.value?.id))
+useSeoMeta({title:()=>album.value?album.value.title+' — '+artist.value?.name+' | WEBMUSIC':'Álbum | WEBMUSIC',description:()=>album.value?'Escucha y descubre las canciones de '+album.value.title+' de '+artist.value?.name+'.':'Explora álbumes musicales.',ogImage:()=>album.value?.cover})
+</script>
+<template><NuxtLayout><div v-if="album"><div class="mb-8 flex flex-col items-start gap-7 md:flex-row md:items-end"><img :src="album.cover" :alt="'Portada de '+album.title" class="aspect-square w-56 rounded-2xl object-cover shadow-2xl md:w-64"/><div><p class="mb-3 text-xs font-bold uppercase tracking-widest text-violet-400">Álbum</p><h1 class="text-3xl font-extrabold md:text-5xl">{{album.title}}</h1><NuxtLink :to="'/artista/'+artist?.slug" class="mt-4 block font-semibold text-[#c7c7d5] hover:text-white">{{artist?.name}}</NuxtLink><p class="mt-2 text-sm text-[#9195a6]">{{album.year}} · {{tracks.length}} canciones</p><button v-if="tracks.length" class="mt-6 flex items-center gap-2 rounded-full bg-violet-500 px-6 py-3 font-bold" @click="p.start(tracks[0],tracks)"><Play :size="18" fill="currentColor"/> Reproducir</button></div></div><div class="rounded-2xl bg-[#151822] p-3"><TrackRow v-for="(track,i) in tracks" :key="track.id" :track="track" :index="i" :artist="artist" :album="album" :queue="tracks"/></div></div><div v-else class="py-20 text-center"><Disc3 class="mx-auto mb-4 text-violet-400" :size="44"/><h1 class="text-2xl font-bold">Álbum no encontrado</h1><NuxtLink class="mt-5 inline-block text-violet-300" to="/albumes">Ver álbumes</NuxtLink></div></NuxtLayout></template>

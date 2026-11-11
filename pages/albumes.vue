@@ -1,0 +1,2 @@
+<script setup lang="ts">const {data}=useCatalog();useSeoMeta({title:'Álbumes | WEBMUSIC',description:'Explora álbumes y novedades en WEBMUSIC.'})</script>
+<template><NuxtLayout><h1 class="mb-2 text-3xl font-extrabold">Álbumes</h1><p class="mb-8 text-sm text-[#989caf]">Explora nuestra discografía.</p><div class="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5"><AlbumCard v-for="album in data.albums" :key="album.id" :album="album" :artist="data.artists.find(a=>a.id===album.artistId)" :tracks="data.tracks"/></div></NuxtLayout></template>
