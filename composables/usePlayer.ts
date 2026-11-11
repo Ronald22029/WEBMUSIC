@@ -1,3 +1,4 @@
+import { isDailymotionTrack } from '~/utils/media'
 import type { Catalog, Track } from '~/types/music'
 
 // El objeto Audio nunca se guarda en useState: no es serializable para SSR de Nuxt.
@@ -70,6 +71,7 @@ export function usePlayer() {
       error.value = 'Esta canción todavía no tiene un enlace HTTPS de audio válido.'
       return
     }
+    const externalVideo = isDailymotionTrack(track)
     const audio = ensureAudio()
     if (!audio) return
     if (list?.length) {
@@ -81,6 +83,21 @@ export function usePlayer() {
       else index.value = found
     }
     error.value = ''
+    if (externalVideo) {
+      // El video se reproduce en el iframe oficial, no en HTMLAudio.
+      audio.pause()
+      audio.removeAttribute('src')
+      audio.load()
+      current.value = track
+      playing.value = false
+      buffering.value = false
+      position.value = 0
+      duration.value = track.duration || 0
+      expanded.value = true
+      library.remember(track.id)
+      return
+    }
+    expanded.value = false
     const different = current.value?.id !== track.id || audio.src !== track.audioUrl
     current.value = track
     if (different) {
@@ -103,14 +120,21 @@ export function usePlayer() {
       error.value = 'No se pudo iniciar el audio. Revisa el enlace y los permisos del servidor externo.'
     }
   }
-  function pause() { ensureAudio()?.pause(); playing.value = false }
+  function pause() {
+    if (isDailymotionTrack(current.value)) { expanded.value = false; return }
+    ensureAudio()?.pause(); playing.value = false
+  }
   async function resume() {
+    if (isDailymotionTrack(current.value)) { expanded.value = true; return }
     const audio = ensureAudio()
     if (!audio || !current.value) return
     try { await audio.play(); playing.value = true; error.value = '' }
     catch { playing.value = false; error.value = 'El navegador no permitió reanudar la reproducción.' }
   }
-  function toggle() { if (playing.value) pause(); else void resume() }
+  function toggle() {
+    if (isDailymotionTrack(current.value)) { expanded.value = true; return }
+    if (playing.value) pause(); else void resume()
+  }
   function next() {
     if (!queue.value.length) return
     let i = index.value + 1
@@ -123,12 +147,17 @@ export function usePlayer() {
     if (track) void start(track)
   }
   function previous() {
+    if (isDailymotionTrack(current.value)) {
+      if (index.value > 0 && queue.value[index.value - 1]) void start(queue.value[index.value - 1])
+      return
+    }
     const audio = ensureAudio()
     if (audio && audio.currentTime > 3) { seek(0); return }
     if (index.value > 0 && queue.value[index.value - 1]) void start(queue.value[index.value - 1])
     else seek(0)
   }
   function seek(seconds: number) {
+    if (isDailymotionTrack(current.value)) return
     const audio = ensureAudio()
     if (audio && Number.isFinite(seconds)) audio.currentTime = Math.max(0, Math.min(seconds, duration.value || seconds))
   }

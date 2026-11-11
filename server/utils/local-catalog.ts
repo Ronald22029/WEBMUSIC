@@ -1,6 +1,7 @@
 import { copyFile, mkdir, readFile, rename, writeFile, unlink } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import seed from '../data/catalog.json'
+import { dailymotionArtist, dailymotionAlbum, dailymotionTrack } from '../data/dailymotion-sample'
 import type { Artist, Album, Catalog, Track } from '../../types/music'
 import type { ImportTrack } from './csv-music'
 
@@ -10,6 +11,15 @@ const dataDir = process.env.WEBMUSIC_DATA_DIR ? resolve(process.env.WEBMUSIC_DAT
 export const localCatalogPath = resolve(dataDir, 'catalog.local.json')
 const backupPath = localCatalogPath + '.bak'
 const initialCatalog = seed as Catalog
+
+// Prueba de Dailymotion en un archivo independiente del CSV y del catálogo base.
+// No elimina ni sobrescribe los registros locales existentes.
+function withVideoSample(data: LocalCatalog): LocalCatalog {
+  if (!data.artists.some(a => a.id === dailymotionArtist.id)) data.artists.push(structuredClone(dailymotionArtist))
+  if (!data.albums.some(a => a.id === dailymotionAlbum.id)) data.albums.push(structuredClone(dailymotionAlbum))
+  if (!data.tracks.some(t => t.id === dailymotionTrack.id)) data.tracks.push(structuredClone(dailymotionTrack))
+  return data
+}
 
 function verifyCatalog(value: unknown): asserts value is LocalCatalog {
   if (!value || typeof value !== 'object') throw new Error('Catálogo local inválido: no es un objeto')
@@ -23,11 +33,11 @@ export async function readLocalCatalog(): Promise<LocalCatalog> {
     const content = await readFile(localCatalogPath, 'utf8')
     const parsed: unknown = JSON.parse(content)
     verifyCatalog(parsed)
-    return parsed
+    return withVideoSample(parsed)
   } catch (error: unknown) {
     if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
       // El catálogo inicial es de solo lectura; se crea copia privada al primer guardado.
-      return structuredClone(initialCatalog)
+      return withVideoSample(structuredClone(initialCatalog))
     }
     // Jamás sustituir silenciosamente un archivo dañado por datos de demostración.
     throw error
