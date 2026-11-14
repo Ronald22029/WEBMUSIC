@@ -39,3 +39,5 @@ jobs:
         run: npm run build
         env:
           NITRO_PRESET: cloudflare_module
+      - name: Probar Workers con D1 local (sin desplegar)
+        run: node scripts/smoke-cloudflare.mjs
