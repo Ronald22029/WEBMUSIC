@@ -14,6 +14,7 @@ const nav = [
  { to: '/biblioteca', name: 'Mi biblioteca', icon: Library }
 ]
 const normalized = computed(() => search.value.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,''))
+const {data:quickTracks}=useTracks(computed(()=>({q:normalized.value.length>=2?search.value:'',limit:6})))
 const suggestions = computed(() => {
  if (normalized.value.length < 2) return []
  const term = normalized.value
@@ -21,7 +22,7 @@ const suggestions = computed(() => {
  return [
   ...data.value.artists.filter(a=>matches(a.name)).slice(0,2).map(a=>({name:a.name,meta:'Artista',to:'/artista/'+a.slug,cover:a.cover})),
   ...data.value.albums.filter(a=>matches(a.title)).slice(0,2).map(a=>({name:a.title,meta:'Álbum',to:'/album/'+a.slug,cover:a.cover})),
-  ...data.value.tracks.filter(t=>matches(t.title)).slice(0,3).map(t=>({name:t.title,meta:'Canción',to:'/album/'+data.value.albums.find(a=>a.id===t.albumId)?.slug,cover:t.cover}))
+  ...quickTracks.value.rows.filter(t=>matches(t.title)).slice(0,3).map(t=>({name:t.title,meta:'Canción',to:'/album/'+data.value.albums.find(a=>a.id===t.albumId)?.slug,cover:t.cover}))
  ].slice(0,6)
 })
 watch(()=>route.fullPath,()=>{menuOpen.value=false;searchFocused.value=false;search.value=String(route.query.q||'')})

@@ -6,10 +6,12 @@ const lib = useLocalLibrary()
 const albums = computed(() => [...data.value.albums].sort((a,b)=>b.year-a.year||a.title.localeCompare(b.title)))
 const featured = computed(() => albums.value.find(a => a.cover) || albums.value[0])
 const featuredArtist = computed(() => data.value.artists.find(a => a.id === featured.value?.artistId))
-const featuredTracks = computed(() => data.value.tracks.filter(t => t.albumId === featured.value?.id).sort((a,b)=>(a.trackNumber||0)-(b.trackNumber||0)))
+const {data:featuredData} = useTracks(computed(()=>({albumId:featured.value?.id||'',limit:250})))
+const featuredTracks = computed(() => featuredData.value.rows)
 const fresh = computed(() => albums.value.slice(0,8))
 const popular = computed(() => data.value.tracks.slice(0,8))
-const latest = computed(() => lib.recentTracks(data.value.tracks).slice(0,5))
+const {data:history} = useTracks(computed(()=>({ids:lib.recent.value.slice(0,30).join(','),limit:40})))
+const latest = computed(() => lib.recentTracks(history.value.rows).slice(0,5))
 useSeoMeta({title:'WEBMUSIC — Descubre tu próxima canción',description:'Explora artistas, álbumes y canciones. Organiza tus favoritos y descubre música en WEBMUSIC.'})
 </script>
 <template>
@@ -19,7 +21,7 @@ useSeoMeta({title:'WEBMUSIC — Descubre tu próxima canción',description:'Expl
   <header class="motion-appear mb-7">
     <div class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-[.2em] text-violet-400"><Sparkles :size="14"/> Tu espacio musical</div>
     <h1 class="text-[29px] font-black tracking-tight sm:text-4xl lg:text-[42px]">Cada canción tiene <span class="bg-gradient-to-r from-violet-300 to-fuchsia-400 bg-clip-text text-transparent">una historia.</span></h1>
-    <p class="mt-3 text-sm text-[#989eb1]">Explora {{data.artists.length}} artistas, {{data.albums.length}} álbumes y {{data.tracks.length}} canciones.</p>
+    <p class="mt-3 text-sm text-[#989eb1]">Explora {{data.counts?.artists ?? data.artists.length}} artistas, {{data.counts?.albums ?? data.albums.length}} álbumes y {{data.counts?.tracks ?? data.tracks.length}} canciones.</p>
   </header>
   <section v-if="featured" class="music-shimmer relative mb-11 min-h-[270px] overflow-hidden rounded-[26px] border border-white/10 bg-[#302346] lg:min-h-[325px]">
     <img v-if="featured.cover" :src="featured.cover" alt="" class="absolute inset-0 h-full w-full object-cover opacity-35"/>
@@ -38,7 +40,7 @@ useSeoMeta({title:'WEBMUSIC — Descubre tu próxima canción',description:'Expl
   </section>
   <section class="mb-11">
     <div class="mb-5 flex items-center justify-between gap-3"><div><p class="mb-1 text-[11px] font-semibold uppercase tracking-widest text-violet-400">Para explorar</p><h2 class="text-xl font-extrabold sm:text-2xl">Álbumes recientes</h2></div><NuxtLink to="/albumes" class="flex flex-none items-center gap-1 text-xs font-semibold text-violet-300 hover:text-white">Ver todos <ArrowRight :size="16"/></NuxtLink></div>
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6"><AlbumCard v-for="a in fresh" :key="a.id" :album="a" :artist="data.artists.find(x=>x.id===a.artistId)" :tracks="data.tracks"/></div>
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6"><AlbumCard v-for="a in fresh" :key="a.id" :album="a" :artist="data.artists.find(x=>x.id===a.artistId)" /></div>
   </section>
   <section class="mb-11">
     <div class="mb-5 flex items-center justify-between"><div><p class="mb-1 text-[11px] font-semibold uppercase tracking-widest text-violet-400">Talento para descubrir</p><h2 class="text-xl font-extrabold sm:text-2xl">Nuestros artistas</h2></div><NuxtLink to="/artistas" class="flex items-center gap-1 text-xs font-semibold text-violet-300 hover:text-white">Ver todos <ArrowRight :size="16"/></NuxtLink></div>

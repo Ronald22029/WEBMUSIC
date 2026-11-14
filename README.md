@@ -1,109 +1,87 @@
-# WEBMUSIC — Plataforma musical local 🎵
+# WEBMUSIC 🎵 — catálogo completo local
 
-WEBMUSIC es una biblioteca musical desarrollada con Nuxt, Vue 3, TypeScript y Tailwind CSS. Los enlaces de audio y portada son externos: **no se descargan ni almacenan archivos de música**.
+Aplicación Nuxt/Vue con reproductor nativo y biblioteca local. **Los archivos de música no se descargan**: el catálogo solo contiene metadatos y enlaces externos, cuya disponibilidad y autorización deben verificarse.
 
-## Ahora TODO se desarrolla en tu PC
+## Novedad: catálogo consolidado de catalogo_enlaces.rar
 
-No necesitas crear cuentas de Cloudflare, Firebase, Vercel ni contratar un servidor. La web y el panel de administración funcionan localmente y los cambios se conservan al apagar el equipo.
+El archivo `WEBMUSIC_catalogo_completo_local.zip` contiene una base SQLite lista para WEBMUSIC con:
 
-La base de datos actual para desarrollo es un archivo privado:
-`.data/webmusic/catalog.local.json`. Al modificar canciones o importar CSV, el servidor actualiza este archivo mediante una escritura atómica y mantiene `.data/webmusic/catalog.local.json.bak` como copia del estado anterior.
+- **1.036 artistas**, incluyendo las fichas de artistas sin canciones.
+- **3.433 álbumes**, incluyendo listas de canciones sueltas y fichas sin pistas.
+- **36.722 canciones**, **36.721 con enlaces HTTPS** y 1 pista sin enlace (oculta hasta corregirla).
+- **1 enlace sin asignar**, guardado por separado en `unassigned_links`.
+- Metadatos de artista, género, año, portada, tipo de lanzamiento, orden de pista y referencias de origen.
+- Índices para búsqueda de canciones, filtrado por artista/álbum/género y paginación.
 
-La carpeta `.data/` está excluida de Git. **No ejecutes `git clean -fdx` ni borres `.data` sin guardar tu respaldo.**
+Cifras de *registros distintos* (artista + álbum + número de pista + canción + URL). No se ha verificado si las URL siguen activas ni sus derechos de reproducción.
 
-## 1. Instalar y ejecutar
+La base SQL se distribuye separadamente del repositorio para evitar subir 33 MB de datos al historial Git.
 
-Requisitos: Node.js 22 o superior y Git.
+### Instalar en Windows
 
-```powershell
-git clone https://github.com/Ronald22029/WEBMUSIC.git
-cd WEBMUSIC
-npm install
-npm run dev
-```
+Requiere Node.js 22+ y Git.
 
-Accede a: http://localhost:3000.
-
-Si ya lo tienes instalado:
+1. Detén tu servidor WEBMUSIC: `Ctrl+C`.
+2. Actualiza:
 
 ```powershell
-cd C:\WEBMUSIC
 git pull origin main
 npm install
+```
+
+3. Descarga el ZIP de catálogo completo de esta conversación. **Extrae su contenido en la carpeta raíz de WEBMUSIC** (donde está `package.json`).
+
+Debe quedar exactamente:
+
+```text
+WEBMUSIC/
+  package.json
+  .data/
+    webmusic/
+      webmusic.sqlite
+```
+
+4. Enciende:
+
+```powershell
 npm run dev
 ```
 
-## 2. Habilitar administrador local
+5. Visita `http://localhost:3000`. Comprueba artistas, álbumes, búsqueda y canciones. No requiere Cloudflare.
 
-Crea `.env` en la raíz del proyecto. Añade **valores tuyos**, distintos de los ejemplos:
-
-```dotenv
-NUXT_ADMIN_PASSWORD=CONTRASENA_PRIVADA_DE_12_O_MAS_CARACTERES
-NUXT_ADMIN_SESSION_SECRET=SECRETO_PRIVADO_ALEATORIO_DE_32_O_MAS_CARACTERES
-```
-
-En PowerShell, para generar un secreto de sesión seguro puedes ejecutar:
+En Windows, desde la carpeta WEBMUSIC puedes extraer el ZIP con:
 
 ```powershell
--join ((1..48) | ForEach-Object { '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'[(Get-Random -Maximum 62)] })
+Expand-Archive -LiteralPath "RUTA\WEBMUSIC_catalogo_completo_local.zip" -DestinationPath "." -Force
 ```
 
-Reinicia el servidor después de crear o cambiar el archivo `.env`. El panel está en:
+**IMPORTANTE:** La carpeta `.data/` no se guarda en GitHub. No la borres ni reemplaces una base modificada sin crear un respaldo.
 
-**http://localhost:3000/admin**
+### ¿Qué pasa con mis cambios anteriores?
 
-Funciones locales:
-- Inicio de sesión administrativo protegido (cookie HttpOnly + firma HMAC).
-- Estadísticas: artistas, álbumes y canciones.
-- Importación de CSV (máximo 750 canciones o 650 KB por archivo).
-- Vista previa con advertencias antes de guardar.
-- Detección de duplicados por identificador estable.
-- Edición de título, URL HTTPS de audio y visibilidad de cada canción.
-- Descarga de copia de seguridad JSON.
-- Actualización del catálogo del sitio sin editar archivos de código.
+Al abrir la base por primera vez, WEBMUSIC detecta `.data/webmusic/catalog.local.json` y fusiona sus artistas, álbumes y canciones con SQLite. Las ediciones del catálogo anterior tienen prioridad en registros con el mismo identificador. Se marca la migración para no repetirla.
 
-**Las importaciones quedan en el servidor local, no en GitHub.** Si modificas tu código con `git pull`, no reemplaza los cambios guardados en `.data/`.
+Nunca se modifica el archivo JSON previo durante esa migración. Conserva el JSON hasta comprobar tus datos.
 
-## 3. Catálogo inicial y nuevas importaciones
+### Rendimiento
 
-El proyecto arranca con una biblioteca incorporada de **3 artistas, 49 álbumes y 469 canciones**. Al primer cambio administrativo, copia el catálogo inicial a `.data/`, donde ya puedes seguir agregando canciones.
+- La API `/api/catalog` envía artistas, álbumes y **solo 60 canciones recientes** para la portada y los componentes globales.
+- La API `/api/tracks` devuelve las canciones por páginas y permite filtros `q`, `artistId`, `albumId`, `genre`, `ids` y `offset`.
+- Artistas y álbumes se muestran en páginas de 60 tarjetas. Las pistas por álbum se solicitan por páginas y el reproductor mantiene su cola actual.
+- El panel administrativo edita los datos directamente en SQLite; para una copia de seguridad, copia `.data/webmusic/webmusic.sqlite` con el servidor detenido.
+- La importación CSV desde el panel permanece disponible para nuevos registros en SQLite.
 
-CSV admitido: columnas `artista,album,cancion,url_audio`. Opcionales: `artista_slug,anio,numero_pista,genero,tipo_lanzamiento,url_portada,url_cancion`.
+### Administrador local
 
-Para importar desde el navegador:
-1. Abre el panel administrativo.
-2. Selecciona un CSV.
-3. Haz clic en **Verificar y previsualizar**.
-4. Revisa registros omitidos y duplicados; confirma que tienes permiso para utilizar los audios.
-5. Haz clic en **Guardar en mi computadora**.
+Accede a `http://localhost:3000/admin`. En el archivo `.env` configura contraseñas privadas:
 
-La biblioteca pública mostrará esos cambios al actualizar la página. Las URLs deben permitir reproducción desde el navegador; no están verificadas automáticamente.
+```dotenv
+NUXT_ADMIN_PASSWORD=REEMPLAZA_POR_CLAVE_DE_12_O_MAS
+NUXT_ADMIN_SESSION_SECRET=REEMPLAZA_POR_SECRETO_DE_32_O_MAS
+```
 
-También puedes usar el importador del repositorio, que modifica `server/data/catalog.json`, pero para trabajar normalmente **utiliza el panel web**; así mantienes los datos privados separados del código.
+No subas `.env` a GitHub. Reinicia `npm run dev` después de cambiar esas variables.
 
-## 4. Respaldos
+### Nota de derechos y calidad
 
-En `/admin` encontrarás **Descargar copia de seguridad**: exporta todo el catálogo como JSON.
-
-Alternativamente copia estos archivos a una carpeta de respaldo:
-
-- `.data/webmusic/catalog.local.json` (catálogo editable).
-- `.data/webmusic/catalog.local.json.bak` (estado anterior al último guardado).
-
-El almacenamiento es local, así que no se sincroniza con otro equipo automáticamente. Al reinstalar Windows o mover el proyecto, conserva esta carpeta.
-
-## 5. Cloudflare, más adelante
-
-No hace falta Cloudflare en esta fase. Conservamos un esquema SQL y una capa de acceso a datos para integrar D1 posteriormente, cuando quieras lanzar el sitio público.
-
-Para compilar en local, el preset predeterminado es Node.js. El despliegue Cloudflare queda desactivado hasta que configuremos `NITRO_PRESET=cloudflare_module` y su binding D1. La migración de los cambios locales a D1 necesitará una importación propia en esa fase.
-
-## 6. Pendientes
-
-- Ampliar el panel con creación/edición completa de artistas y álbumes.
-- Pruebas reales de reproducción y permisos de los enlaces externos.
-- Cuentas, playlists y sincronización.
-- Búsqueda paginada sobre una base real para catálogos mucho mayores.
-- APK Android y despliegue público.
-
-**Derechos:** encontrar una URL de música en internet no acredita que sea legal retransmitirla. Solo publica música con autorización o licencias aplicables.
+Las URL pueden estar caídas, ser temporales o bloquear reproducción externa; una URL no demuestra que exista permiso de distribución. Antes de publicar WEBMUSIC públicamente o enviarlo a Google Play, verifica autorizaciones de reproducción, portadas y datos de terceros. Esta implementación está preparada para uso de desarrollo local.
