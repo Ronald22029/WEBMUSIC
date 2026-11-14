@@ -24,6 +24,12 @@ function mergePreviousLocalEdits(database:DatabaseSync) {
   if(marker || !existsSync(legacyJsonPath))return
   const local=JSON.parse(readFileSync(legacyJsonPath,'utf8')) as Catalog
   if(!Array.isArray(local.artists)||!Array.isArray(local.albums)||!Array.isArray(local.tracks))throw new Error('El catálogo local anterior no tiene formato válido')
+  const dmTrack=local.tracks.find(t=>t.id==='t-genesis-campos-fluye-en-mi-medley-001-fluye-en-mi' && (t.audioUrl==='https://dai.ly/xbvseii'||t.audioUrl==='https://www.dailymotion.com/video/xbvseii'))
+  if(dmTrack){
+    local.tracks=local.tracks.filter(t=>t!==dmTrack)
+    if(!local.tracks.some(t=>t.albumId===dmTrack.albumId))local.albums=local.albums.filter(a=>a.id!==dmTrack.albumId)
+    if(!local.albums.some(a=>a.artistId===dmTrack.artistId))local.artists=local.artists.filter(a=>a.id!==dmTrack.artistId)
+  }
   const artist=database.prepare("INSERT INTO artists(id,name,slug,description,cover,accent,genre,source_url,published) VALUES(?,?,?,?,?,?,?,'',1) ON CONFLICT(id) DO UPDATE SET name=excluded.name,description=excluded.description,cover=CASE WHEN excluded.cover<>'' THEN excluded.cover ELSE artists.cover END")
   const album=database.prepare("INSERT INTO albums(id,title,slug,artist_id,year,cover,genre,release_type,source_url,published) VALUES(?,?,?,?,?,?,?,?,'',1) ON CONFLICT(id) DO UPDATE SET title=excluded.title,year=CASE WHEN excluded.year>0 THEN excluded.year ELSE albums.year END,cover=CASE WHEN excluded.cover<>'' THEN excluded.cover ELSE albums.cover END")
   const track=database.prepare("INSERT INTO tracks(id,title,slug,artist_id,album_id,duration,audio_url,cover,plays,track_number,source_status,source_page,published,search_text) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET title=excluded.title,audio_url=excluded.audio_url,cover=CASE WHEN excluded.cover<>'' THEN excluded.cover ELSE tracks.cover END,published=excluded.published,search_text=excluded.search_text")
@@ -33,7 +39,11 @@ function mergePreviousLocalEdits(database:DatabaseSync) {
     for(const a of local.albums)album.run(a.id,a.title,a.slug,a.artistId,a.year||0,a.cover||'',a.genre||'',a.releaseType||'')
     const artists=new Map(local.artists.map(a=>[a.id,a.name]))
     const albums=new Map(local.albums.map(a=>[a.id,a.title]))
-    for(const t of local.tracks)track.run(t.id,t.title,t.slug,t.artistId,t.albumId,t.duration||0,t.audioUrl,t.cover||'',t.plays||0,t.trackNumber||0,t.sourceStatus||'unverified',t.sourcePage||'',(t as any).published===0?0:1,cleanSearch([t.title,artists.get(t.artistId)||'',albums.get(t.albumId)||''].join(' ')))
+    for(const t of local.tracks) {
+      // No resucitar la prueba de Dailymotion retirada anteriormente.
+      if(t.id==='t-genesis-campos-fluye-en-mi-medley-001-fluye-en-mi' && (t.audioUrl==='https://dai.ly/xbvseii'||t.audioUrl==='https://www.dailymotion.com/video/xbvseii'))continue
+      track.run(t.id,t.title,t.slug,t.artistId,t.albumId,t.duration||0,t.audioUrl,t.cover||'',t.plays||0,t.trackNumber||0,t.sourceStatus||'unverified',t.sourcePage||'',(t as any).published===0?0:1,cleanSearch([t.title,artists.get(t.artistId)||'',albums.get(t.albumId)||''].join(' ')))
+    }
     database.prepare("INSERT OR REPLACE INTO import_meta(key,value) VALUES('legacy_json_merged',?)").run(new Date().toISOString())
     database.exec('COMMIT')
   }catch(error){database.exec('ROLLBACK');throw error}
