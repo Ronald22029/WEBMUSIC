@@ -1,9 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "webmusic",
-  "compatibility_date": "2026-11-11",
-  "observability": { "enabled": true },
-  "d1_databases": [
-    { "binding": "DB", "database_name": "webmusic", "database_id": "PON_AQUI_EL_ID_REAL" }
-  ]
+  "name": "cieloplay",
+  "main": ".output/server/index.mjs",
+  "assets": { "directory": ".output/public", "binding": "ASSETS", "run_worker_first": ["/api/*"] },
+  "compatibility_date": "2026-11-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [{ "binding": "DB", "database_name": "cieloplay-db", "database_id": "00000000-0000-0000-0000-000000000000" }]
 }

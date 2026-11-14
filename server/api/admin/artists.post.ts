@@ -9,13 +9,19 @@ export default defineEventHandler(async event=>{
  const description=typeof body?.description==='string'?body.description.trim().slice(0,2000):''
  if(!slug)throw createError({statusCode:400,statusMessage:'Nombre inválido'})
  const id='a-'+slug
+ const cloud=optionalMusicDb(event)
+ if(cloud){
+  const exists=await cloud.prepare('SELECT id FROM artists WHERE id=? OR slug=?').bind(id,slug).first()
+  if(exists)throw createError({statusCode:409,statusMessage:'El artista ya existe'})
+  await cloud.prepare("INSERT INTO artists(id,name,slug,description,cover,accent,genre,source_url,published) VALUES(?,?,?,?,?,'#a17aff','','',1)").bind(id,name,slug,description,cover).run()
+  return {ok:true,id}
+ }
  const sqlite=getLocalSQLite()
  if(sqlite){
   if(sqlite.prepare('SELECT id FROM artists WHERE id=? OR slug=?').get(id,slug))throw createError({statusCode:409,statusMessage:'El artista ya existe'})
   sqlite.prepare("INSERT INTO artists(id,name,slug,description,cover,accent,genre,source_url,published) VALUES(?,?,?,?,?,'#a17aff','','',1)").run(id,name,slug,description,cover)
   return {ok:true,id}
  }
- if(optionalMusicDb(event))throw createError({statusCode:501,statusMessage:'Disponible en modo local'})
  await mutateLocalCatalog(data=>{
   if(data.artists.some(a=>a.id===id||a.slug===slug))throw createError({statusCode:409,statusMessage:'El artista ya existe'})
   data.artists.push({id,name,slug,description,cover,accent:'#a17aff'})

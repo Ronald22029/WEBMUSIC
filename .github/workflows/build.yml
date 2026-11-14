@@ -1,4 +1,4 @@
-name: Comprobar WEBMUSIC
+name: Comprobar CieloPlay
 on:
   push:
     branches: [main]
@@ -22,6 +22,9 @@ jobs:
           node --check scripts/import-csv.mjs
           node --check scripts/smoke-local.mjs
           node --check scripts/smoke-sqlite.mjs
+          node --check scripts/export-d1.mjs
+          node --check scripts/apply-d1.mjs
+          node --check scripts/smoke-export-d1.mjs
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
       - name: Compilar Nuxt
@@ -30,3 +33,9 @@ jobs:
         run: node scripts/smoke-local.mjs
       - name: Prueba funcional de SQLite
         run: node scripts/smoke-sqlite.mjs
+      - name: Comprobar exportación SQLite a D1
+        run: node scripts/smoke-export-d1.mjs
+      - name: Compilar para Cloudflare Workers (sin desplegar)
+        run: npm run build
+        env:
+          NITRO_PRESET: cloudflare_module

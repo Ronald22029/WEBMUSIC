@@ -1,14 +1,21 @@
 import { getQuery } from 'h3'
 import { readLocalCatalog } from '../utils/local-catalog'
 import { getLocalSQLite, sqliteTracks, cleanSearch } from '../utils/sqlite-catalog'
+import { optionalMusicDb } from '../utils/admin-db'
+import { tracksFromD1 } from '../utils/d1-catalog'
 export default defineEventHandler(async event=>{
- setHeader(event,'cache-control','no-store')
  const q=getQuery(event)
  const str=(v:unknown)=>typeof v==='string'?v.trim().slice(0,150):''
  const artistId=str(q.artistId),albumId=str(q.albumId),genre=str(q.genre),search=str(q.q)
- const ids=str(q.ids).split(',').map(v=>v.trim()).filter(Boolean).slice(0,200)
- const limit=Math.max(1,Math.min(250,Number(q.limit)||30))
+ const ids=str(q.ids).split(',').map(v=>v.trim()).filter(Boolean).slice(0,80)
+ const limit=Math.max(1,Math.min(80,Number(q.limit)||30))
  const offset=Math.max(0,Math.min(10000000,Number(q.offset)||0))
+ const cloud=optionalMusicDb(event)
+ if(cloud){
+   setHeader(event,'cache-control','public, max-age=30, s-maxage=120, stale-while-revalidate=30')
+   return tracksFromD1(cloud,{artistId,albumId,genre,q:search,ids:ids.length?ids:undefined,limit,offset})
+ }
+ setHeader(event,'cache-control','no-store')
  const db=getLocalSQLite()
  if(db)return sqliteTracks(db,{artistId,albumId,genre,q:search,ids:ids.length?ids:undefined,limit,offset})
  const data=await readLocalCatalog()

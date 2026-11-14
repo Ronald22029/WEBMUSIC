@@ -1,4 +1,5 @@
 import { getQuery } from 'h3'
+import { optionalMusicDb } from '../../utils/admin-db'
 import { getLocalSQLite } from '../../utils/sqlite-catalog'
 import { readLocalCatalog } from '../../utils/local-catalog'
 
@@ -8,6 +9,34 @@ export default defineEventHandler(async event=>{
  const kind=String(q.kind||'missing_year').slice(0,50)
  const offset=Math.max(0,Math.min(1_000_000,Number(q.offset)||0))
  const limit=Math.max(1,Math.min(100,Number(q.limit)||30))
+ const cloud=optionalMusicDb(event)
+ if(cloud){
+  const queries={
+   missingYear:"SELECT COUNT(*) n FROM albums WHERE year IS NULL OR year<=0",
+   missingCover:"SELECT COUNT(*) n FROM albums WHERE cover IS NULL OR TRIM(cover)=''",
+   missingAudio:"SELECT COUNT(*) n FROM tracks WHERE audio_url IS NULL OR audio_url NOT LIKE 'https://%'",
+   uncheckedAudio:"SELECT COUNT(*) n FROM tracks WHERE source_status IS NULL OR source_status IN ('unverified','unknown','missing')",
+   duplicateLinks:"SELECT COUNT(*) n FROM (SELECT audio_url FROM tracks WHERE audio_url LIKE 'https://%' GROUP BY audio_url HAVING COUNT(*)>1)",
+   duplicateAlbums:"SELECT COUNT(*) n FROM (SELECT artist_id,LOWER(TRIM(title)) title FROM albums GROUP BY artist_id,LOWER(TRIM(title)) HAVING COUNT(*)>1)"
+  } as const
+  const countsArray=await Promise.all(Object.values(queries).map(sql=>cloud.prepare(sql).first<{n:number}>()))
+  const counts=Object.fromEntries(Object.keys(queries).map((key,i)=>[key,countsArray[i]?.n||0]))
+  const filters:Record<string,{from:string;where:string;name:string;reason:string;order:string}>={
+   missing_year:{from:'albums al LEFT JOIN artists a ON a.id=al.artist_id',where:'(al.year IS NULL OR al.year<=0)',name:'al.title',reason:'Sin año confirmado',order:'al.title'},
+   missing_cover:{from:'albums al LEFT JOIN artists a ON a.id=al.artist_id',where:"(al.cover IS NULL OR TRIM(al.cover)='')",name:'al.title',reason:'Sin portada',order:'al.title'},
+   missing_audio:{from:'tracks al LEFT JOIN artists a ON a.id=al.artist_id',where:"(al.audio_url IS NULL OR al.audio_url NOT LIKE 'https://%')",name:'al.title',reason:'Sin enlace HTTPS',order:'al.title'},
+   unchecked_audio:{from:'tracks al LEFT JOIN artists a ON a.id=al.artist_id',where:"(al.source_status IS NULL OR al.source_status IN ('unverified','unknown','missing'))",name:'al.title',reason:'Enlace pendiente de validación',order:'al.title'},
+   duplicate_links:{from:'tracks al LEFT JOIN artists a ON a.id=al.artist_id',where:"al.audio_url IN (SELECT audio_url FROM tracks WHERE audio_url LIKE 'https://%' GROUP BY audio_url HAVING COUNT(*)>1)",name:'al.title',reason:'Comparte enlace con otra pista',order:'al.audio_url,al.title'},
+   duplicate_albums:{from:'albums al LEFT JOIN artists a ON a.id=al.artist_id',where:'EXISTS (SELECT 1 FROM albums x WHERE x.artist_id=al.artist_id AND LOWER(TRIM(x.title))=LOWER(TRIM(al.title)) AND x.id<>al.id)',name:'al.title',reason:'Posible álbum duplicado',order:'al.title'}
+  }
+  const config=filters[kind]||filters.missing_year!
+  const total=(await cloud.prepare('SELECT COUNT(*) n FROM '+config.from+' WHERE '+config.where).first<{n:number}>())?.n||0
+  const field=kind.includes('audio')||kind==='duplicate_links'?'al.audio_url':'NULL'
+  const rows=await cloud.prepare('SELECT al.id AS id,'+config.name+' AS name,a.name AS artist,'+field+' AS audioUrl FROM '+config.from+
+    ' WHERE '+config.where+' ORDER BY '+config.order+' LIMIT ? OFFSET ?').bind(limit,offset).all()
+  return {storage:'cloudflare',counts,kind,total,offset,limit,rows:rows.results.map(row=>({...row,type:kind,reason:config.reason})),
+   notice:'Los enlaces no se verifican automáticamente. No se borran registros.'}
+ }
  const db=getLocalSQLite()
  if(db){
   const counts={

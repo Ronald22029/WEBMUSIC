@@ -10,6 +10,20 @@ export default defineEventHandler(async event=>{
  if(!Number.isInteger(year)||year<0||year>2100)throw createError({statusCode:400,statusMessage:'Año inválido'})
  const genre=typeof body?.genre==='string'?body.genre.trim().slice(0,120):''
  const releaseType=typeof body?.releaseType==='string'?body.releaseType.trim().slice(0,80):''
+ const cloud=optionalMusicDb(event)
+ if(cloud){
+  const previous=await cloud.prepare('SELECT artist_id AS artistId FROM albums WHERE id=?').bind(id).first<{artistId:string}>()
+  if(!previous)throw createError({statusCode:404,statusMessage:'Álbum no encontrado'})
+  await cloud.prepare('UPDATE albums SET title=?,cover=?,year=?,genre=?,release_type=? WHERE id=?')
+   .bind(title,cover,year,genre,releaseType,id).run()
+  const artist=await cloud.prepare('SELECT name FROM artists WHERE id=?').bind(previous.artistId).first<{name:string}>()
+  const tracks=await cloud.prepare('SELECT id,title FROM tracks WHERE album_id=?').bind(id).all<{id:string;title:string}>()
+  for(let i=0;i<tracks.results.length;i+=50){
+   await cloud.batch(tracks.results.slice(i,i+50).map(t=>
+    cloud.prepare('UPDATE tracks SET search_text=? WHERE id=?').bind(cleanSearch([t.title,artist?.name||'',title].join(' ')),t.id)))
+  }
+  return {ok:true,id}
+ }
  const sqlite=getLocalSQLite()
  if(sqlite){
   const old=sqlite.prepare('SELECT artist_id FROM albums WHERE id=?').get(id) as {artist_id:string}|undefined
@@ -21,7 +35,6 @@ export default defineEventHandler(async event=>{
   for(const track of trackRows)update.run(cleanSearch([track.title,artist.name,title].join(' ')),track.id)
   return {ok:true,id}
  }
- if(optionalMusicDb(event))throw createError({statusCode:501,statusMessage:'Disponible en modo local'})
  await mutateLocalCatalog(data=>{
   const album=data.albums.find(a=>a.id===id)
   if(!album)throw createError({statusCode:404,statusMessage:'Álbum no encontrado'})

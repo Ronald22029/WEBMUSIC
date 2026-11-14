@@ -11,6 +11,18 @@ export default defineEventHandler(async event=>{
  const audioUrl=typeof body?.audioUrl==='string'?validHttps(body.audioUrl):''
  if(!title||title.length>200||!audioUrl||typeof body?.published!=='boolean')throw createError({statusCode:400,statusMessage:'Indica título, enlace HTTPS y visibilidad válidos'})
  const published=body.published?1:0
+ const cloud=optionalMusicDb(event)
+ if(cloud){
+  const previous=await cloud.prepare('SELECT artist_id AS artistId, album_id AS albumId FROM tracks WHERE id=?').bind(id).first<{artistId:string;albumId:string}>()
+  if(!previous)throw createError({statusCode:404,statusMessage:'Canción no encontrada'})
+  const [artist,album]=await Promise.all([
+   cloud.prepare('SELECT name FROM artists WHERE id=?').bind(previous.artistId).first<{name:string}>(),
+   cloud.prepare('SELECT title FROM albums WHERE id=?').bind(previous.albumId).first<{title:string}>()
+  ])
+  await cloud.prepare("UPDATE tracks SET title=?,audio_url=?,published=?,source_status='unverified',search_text=? WHERE id=?")
+   .bind(title,audioUrl,published,cleanSearch([title,artist?.name||'',album?.title||''].join(' ')),id).run()
+  return {ok:true,id,storage:'cloudflare'}
+ }
  const sqlite=getLocalSQLite()
  if(sqlite){
   const old=sqlite.prepare('SELECT artist_id,album_id FROM tracks WHERE id=?').get(id) as {artist_id:string;album_id:string}|undefined
