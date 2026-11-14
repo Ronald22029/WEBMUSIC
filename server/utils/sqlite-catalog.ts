@@ -48,6 +48,28 @@ function mergePreviousLocalEdits(database:DatabaseSync) {
     database.exec('COMMIT')
   }catch(error){database.exec('ROLLBACK');throw error}
 }
+function clearKnownIncorrectImportYears(database:DatabaseSync) {
+  // Los cinco discos clásicos de Miel San Marcos llegaron con "2020" en el CSV,
+  // pero ese dato corresponde erróneamente al año de esos álbumes.
+  // No asignamos otra fecha sin verificar la edición exacta.
+  const migration='clear_unverified_miel_san_marcos_2020_v1'
+  if(database.prepare('SELECT value FROM import_meta WHERE key=?').get(migration))return
+  const ids=[
+    'alb-miel-san-marcos-digno-es-el',
+    'alb-miel-san-marcos-eres-mi-dios',
+    'alb-miel-san-marcos-exaltate-senor',
+    'alb-miel-san-marcos-he-ahi-el-cordero',
+    'alb-miel-san-marcos-viene-por-mi'
+  ]
+  database.exec('BEGIN IMMEDIATE')
+  try{
+    const update=database.prepare('UPDATE albums SET year=0 WHERE id=? AND year=2020')
+    for(const id of ids)update.run(id)
+    database.prepare('INSERT INTO import_meta(key,value) VALUES(?,?)').run(migration,new Date().toISOString())
+    database.exec('COMMIT')
+  }catch(error){database.exec('ROLLBACK');throw error}
+}
+
 export function getLocalSQLite():DatabaseSync|null {
   if(!existsSync(sqlitePath))return null
   if(db)return db
@@ -57,6 +79,7 @@ export function getLocalSQLite():DatabaseSync|null {
     opened.exec('PRAGMA busy_timeout=3000')
     if(!opened.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='tracks'").get())throw new Error('El archivo SQLite no contiene el esquema de WEBMUSIC')
     mergePreviousLocalEdits(opened)
+    clearKnownIncorrectImportYears(opened)
     db=opened
     return db
   }catch(e){opened.close();throw e}

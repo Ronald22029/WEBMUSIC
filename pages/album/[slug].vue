@@ -26,7 +26,7 @@ useSeoMeta({
       <p class="mb-3 text-xs font-bold uppercase tracking-widest text-violet-400">{{album.releaseType||'Álbum'}}</p>
       <h1 class="break-words text-3xl font-black tracking-tight md:text-5xl">{{album.title}}</h1>
       <NuxtLink :to="'/artista/'+artist?.slug" class="mt-4 block font-semibold text-[#d4cde1] hover:text-violet-300">{{artist?.name}}</NuxtLink>
-      <p class="mt-2 text-sm text-[#9ca1b5]">{{album.year}} · {{album.genre||'Música'}} · {{trackResponse.total}} canciones</p>
+      <p class="mt-2 text-sm text-[#9ca1b5]"><span v-if="album.year">{{album.year}} · </span>{{album.genre||'Música'}} · {{trackResponse.total}} canciones</p>
       <button v-if="tracks.length" class="mt-6 flex items-center gap-2 rounded-full bg-violet-500 px-6 py-3 text-sm font-bold shadow-lg shadow-violet-500/20 transition hover:scale-105" @click="player.start(tracks[0],tracks)"><Play :size="18" fill="currentColor"/> Reproducir álbum</button>
     </div>
   </div>

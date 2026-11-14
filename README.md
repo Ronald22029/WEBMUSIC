@@ -85,3 +85,10 @@ No subas `.env` a GitHub. Reinicia `npm run dev` después de cambiar esas variab
 ### Nota de derechos y calidad
 
 Las URL pueden estar caídas, ser temporales o bloquear reproducción externa; una URL no demuestra que exista permiso de distribución. Antes de publicar WEBMUSIC públicamente o enviarlo a Google Play, verifica autorizaciones de reproducción, portadas y datos de terceros. Esta implementación está preparada para uso de desarrollo local.
+
+## Política de fechas de álbumes
+
+- Los años no informados se guardan como `0` (sin año), pero **no se muestran** como `0`, raya ni año actual en el sitio.
+- Al crear un álbum, el año es opcional y permanece vacío hasta que se indique una fecha respaldada.
+- La migración `clear_unverified_miel_san_marcos_2020_v1` elimina el 2020 incorrectamente atribuido a cinco álbumes clásicos de Miel San Marcos. No modifica los años corregidos manualmente ni el 2020 confirmado de *Adorando en Casa (Amigos Invitados)*.
+- Los demás años proceden del catálogo CSV original. **No se han verificado uno por uno**; no deben interpretarse como fechas certificadas. Pueden revisarse y corregirse desde el administrador.

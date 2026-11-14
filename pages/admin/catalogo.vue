@@ -10,7 +10,7 @@ const artists=ref<Artist[]>([])
 const albums=ref<Album[]>([])
 const loading=ref(false),error=ref(''),notice=ref(''),search=ref('')
 const editing=ref<null|{kind:'artist'|'album';id?:string}>(null)
-const name=ref(''),cover=ref(''),description=ref(''),artistId=ref(''),year=ref(0),genre=ref(''),releaseType=ref('Álbum')
+const name=ref(''),cover=ref(''),description=ref(''),artistId=ref(''),year=ref<number|string>(''),genre=ref(''),releaseType=ref('Álbum')
 const isLocal=computed(()=>session.value?.storage==='local')
 const filteredArtists=computed(()=>artists.value.filter(a=>a.name.toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es'))))
 const filteredAlbums=computed(()=>albums.value.filter(a=>(a.title+' '+a.artistName).toLocaleLowerCase('es').includes(search.value.toLocaleLowerCase('es'))))
@@ -25,16 +25,16 @@ async function load(){
 }
 watch(()=>session.value?.authenticated,(value)=>{if(value)void load()},{immediate:true})
 function add(kind:'artist'|'album'){
- editing.value={kind};name.value='';cover.value='';description.value='';artistId.value=artists.value[0]?.id||'';year.value=new Date().getFullYear();genre.value='';releaseType.value='Álbum';error.value='';notice.value=''
+ editing.value={kind};name.value='';cover.value='';description.value='';artistId.value=artists.value[0]?.id||'';year.value='';genre.value='';releaseType.value='Álbum';error.value='';notice.value=''
 }
 function editArtist(a:Artist){editing.value={kind:'artist',id:a.id};name.value=a.name;cover.value=a.cover;description.value=a.description||'';error.value='';notice.value=''}
-function editAlbum(a:Album){editing.value={kind:'album',id:a.id};name.value=a.title;cover.value=a.cover;artistId.value=a.artistId;year.value=a.year;genre.value=a.genre||'';releaseType.value=a.releaseType||'Álbum';error.value='';notice.value=''}
+function editAlbum(a:Album){editing.value={kind:'album',id:a.id};name.value=a.title;cover.value=a.cover;artistId.value=a.artistId;year.value=a.year||'';genre.value=a.genre||'';releaseType.value=a.releaseType||'Álbum';error.value='';notice.value=''}
 async function save(){
  if(!editing.value)return
  loading.value=true;error.value='';notice.value=''
  const current=editing.value
  const isAlbum=current.kind==='album'
- const body=isAlbum?{title:name.value,cover:cover.value,artistId:artistId.value,year:year.value,genre:genre.value,releaseType:releaseType.value}:{name:name.value,cover:cover.value,description:description.value}
+ const body=isAlbum?{title:name.value,cover:cover.value,artistId:artistId.value,year:year.value===''?0:Number(year.value),genre:genre.value,releaseType:releaseType.value}:{name:name.value,cover:cover.value,description:description.value}
  const base=isAlbum?'/api/admin/albums':'/api/admin/artists'
  try{
   if(current.id)await $fetch(base+'/'+encodeURIComponent(current.id),{method:'PATCH',body})
@@ -81,7 +81,7 @@ function changeTab(value:'artists'|'albums'){tab.value=value;search.value='';err
       <div v-for="a in filteredAlbums" :key="a.id" class="flex items-center gap-3 rounded-2xl border border-white/[.07] bg-[#1a1d29] p-4">
         <img v-if="a.cover" :src="a.cover" :alt="a.title" class="h-16 w-16 rounded-xl object-cover"/>
         <div v-else class="flex h-16 w-16 items-center justify-center rounded-xl bg-violet-500/10"><Disc3 :size="24"/></div>
-        <div class="min-w-0 flex-1"><p class="truncate text-sm font-bold">{{a.title}}</p><p class="mt-1 truncate text-xs text-[#a0a2b4]">{{a.artistName}} · {{a.year||'—'}} · {{a.tracks}} canciones</p></div>
+        <div class="min-w-0 flex-1"><p class="truncate text-sm font-bold">{{a.title}}</p><p class="mt-1 truncate text-xs text-[#a0a2b4]">{{a.artistName}}<span v-if="a.year"> · {{a.year}}</span> · {{a.tracks}} canciones</p></div>
         <button :aria-label="'Editar '+a.title" class="rounded-xl border border-white/10 p-2 hover:bg-white/10" @click="editAlbum(a)"><Pencil :size="17"/></button>
       </div>
     </template>
@@ -96,7 +96,7 @@ function changeTab(value:'artists'|'albums'){tab.value=value;search.value='';err
      <template v-else>
       <label class="mt-5 block text-xs font-bold text-[#c4c4d3]">Artista<select v-model="artistId" :disabled="!!editing.id" class="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#11131e] px-4 text-sm"><option v-for="a in artists" :key="a.id" :value="a.id">{{a.name}}</option></select></label>
       <div class="mt-5 grid grid-cols-2 gap-4">
-       <label class="block text-xs font-bold text-[#c4c4d3]">Año<input v-model.number="year" type="number" min="0" max="2100" class="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#11131e] px-4 text-sm"/></label>
+       <label class="block text-xs font-bold text-[#c4c4d3]">Año (opcional; dejar vacío si no es confiable)<input v-model.number="year" type="number" min="1900" max="2100" placeholder="Sin año" class="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#11131e] px-4 text-sm"/></label>
        <label class="block text-xs font-bold text-[#c4c4d3]">Tipo<input v-model="releaseType" class="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#11131e] px-4 text-sm"/></label>
       </div>
       <label class="mt-5 block text-xs font-bold text-[#c4c4d3]">Género<input v-model="genre" class="mt-2 h-11 w-full rounded-lg border border-white/10 bg-[#11131e] px-4 text-sm"/></label>

@@ -25,7 +25,7 @@ async function play(e:Event){
   <button :aria-label="'Reproducir '+album.title" :disabled="loading" class="absolute bottom-3 right-3 flex h-11 w-11 translate-y-2 items-center justify-center rounded-full bg-violet-500 text-white opacity-0 shadow-xl transition group-hover:translate-y-0 group-hover:opacity-100 focus:translate-y-0 focus:opacity-100" @click="play"><EqualizerBars v-if="active" active small/><Play v-else :size="20" fill="currentColor"/></button>
  </div>
  <div class="mt-3 truncate text-sm font-bold">{{album.title}}</div>
- <div class="mt-1 truncate text-xs text-[#9ca0b2]">{{artist?.name||'Artista'}} <span class="text-[#686d80]">·</span> {{album.year||'—'}}</div>
+ <div class="mt-1 truncate text-xs text-[#9ca0b2]">{{artist?.name||'Artista'}} <span v-if="album.year" class="text-[#686d80]">·</span> <span v-if="album.year">{{album.year}}</span></div>
  <p class="mt-1.5 truncate text-[11px] text-violet-300/75">{{album.releaseType||'Álbum'}}</p>
 </NuxtLink>
 </template>
