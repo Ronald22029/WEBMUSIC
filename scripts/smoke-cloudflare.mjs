@@ -4,6 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
+const watchdog=setTimeout(()=>{console.error('TIMEOUT: prueba Wrangler excedió 110 segundos');process.exit(1)},110000)
 const dir=mkdtempSync(join(tmpdir(),'cieloplay-workerd-'))
 const port=String(38600+Math.floor(Math.random()*300))
 const base='http://127.0.0.1:'+port
@@ -48,4 +49,4 @@ try{
  if(ids.total!==1)throw Error('Consulta D1 por IDs falla')
  console.log('WORKER+D1 OK: estado, catálogo, búsqueda, álbum y playlists')
 }catch(e){console.error(e);console.error(logs.slice(-4500));process.exitCode=1}
-finally{if(server){server.kill('SIGTERM');await delay(1000)}rmSync(dir,{recursive:true,force:true})}
+finally{if(server){server.kill('SIGTERM');await delay(1000)}rmSync(dir,{recursive:true,force:true});clearTimeout(watchdog);process.exit(process.exitCode||0)}
