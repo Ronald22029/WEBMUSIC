@@ -8,7 +8,7 @@ const order=ref<'new'|'old'|'az'>('new')
 const albums=computed(()=>{
  const q=query.value.trim().toLocaleLowerCase('es')
  return data.value.albums.filter(a=>(artistId.value==='all'||a.artistId===artistId.value)&&(!q||a.title.toLocaleLowerCase('es').includes(q)))
- .sort((a,b)=>order.value==='az'?a.title.localeCompare(b.title):order.value==='old'?a.year-b.year:b.year-a.year)
+ .sort((a,b)=>order.value==='az'?a.title.localeCompare(b.title):((a.year||0)===0?1:0)-((b.year||0)===0?1:0)||(order.value==='old'?a.year-b.year:b.year-a.year)||a.title.localeCompare(b.title))
 })
 const visible=computed(()=>albums.value.slice((page.value-1)*pageSize,page.value*pageSize))
 watch([artistId,query,order],()=>page.value=1)

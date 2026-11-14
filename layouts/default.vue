@@ -11,7 +11,8 @@ const nav = [
  { to: '/explorar', name: 'Explorar', icon: Compass },
  { to: '/artistas', name: 'Artistas', icon: Users },
  { to: '/albumes', name: 'Álbumes', icon: Disc3 },
- { to: '/biblioteca', name: 'Mi biblioteca', icon: Library }
+ { to: '/biblioteca', name: 'Mi biblioteca', icon: Library },
+ { to: '/playlists', name: 'Mis playlists', icon: Library }
 ]
 const normalized = computed(() => search.value.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,''))
 const {data:quickTracks}=useTracks(computed(()=>({q:normalized.value.length>=2?search.value:'',limit:6})))
@@ -51,7 +52,7 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
    </NuxtLink>
    <p class="mb-3 mt-9 px-4 text-[10px] font-extrabold uppercase tracking-[.24em] text-[#6e7285]">Personal</p>
    <NuxtLink to="/biblioteca" class="mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#999cad] hover:bg-white/[.06] hover:text-white" active-class="!bg-violet-500/15 !text-violet-300"><Library :size="19"/>Mi biblioteca</NuxtLink>
-   <NuxtLink to="/biblioteca" class="mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#999cad] hover:bg-white/[.06] hover:text-white"><Heart :size="19"/>Mis favoritos</NuxtLink>
+   <NuxtLink to="/biblioteca" class="mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#999cad] hover:bg-white/[.06] hover:text-white"><Heart :size="19"/>Mis favoritos</NuxtLink><NuxtLink to="/playlists" class="mb-1 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-[#999cad] hover:bg-white/[.06] hover:text-white"><Library :size="19"/>Mis playlists</NuxtLink>
   </div>
   <div class="absolute bottom-36 left-4 right-4 rounded-2xl border border-violet-400/10 bg-gradient-to-br from-violet-500/15 to-[#1b1d2b] p-5">
    <EqualizerBars :active="false"/>

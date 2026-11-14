@@ -10,9 +10,8 @@ async function play(e:Event){
  if(loading.value)return
  loading.value=true
  try{
-  const existing=(props.tracks||[]).filter(t=>t.albumId===props.album.id)
-  const list=existing.length?existing:(await $fetch<TrackPage>('/api/tracks',{query:{albumId:props.album.id,limit:250}})).rows
-  if(list.length)void player.start(list[0]!,list)
+  const list=(await $fetch<TrackPage>('/api/tracks',{query:{albumId:props.album.id,limit:100}})).rows
+  if(list.length)void player.start(list[0]!,list,{source:'album',albumId:props.album.id,offset:0})
  }finally{loading.value=false}
 }
 </script>

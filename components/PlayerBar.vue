@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat2, Repeat1, Music2, X, ChevronUp, ChevronDown, Heart, Loader2, Headphones } from 'lucide-vue-next'
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat2, Repeat1, Music2, X, ChevronUp, ChevronDown, Heart, Loader2, Headphones, ListMusic } from 'lucide-vue-next'
 const p = usePlayer()
+const queueOpen=ref(false)
 const lib = useLocalLibrary()
 const { data } = useCatalog()
 const artist = computed(() => data.value.artists.find(a => a.id === p.current.value?.artistId))
@@ -13,7 +14,7 @@ const currentArtist = computed(() => artist.value?.name || (p.current.value ? 'A
 function favorite() { if (p.current.value) lib.toggleFavorite(p.current.value.id) }
 function setVolume(e: Event) { p.setVolume(Number((e.target as HTMLInputElement).value)) }
 function closeExpanded() { p.expanded.value = false }
-function keyDown(e: KeyboardEvent) { if (e.key === 'Escape' && p.expanded.value) closeExpanded() }
+function keyDown(e: KeyboardEvent) { if (e.key === 'Escape') {queueOpen.value=false; if(p.expanded.value) closeExpanded()} }
 onMounted(() => window.addEventListener('keydown',keyDown))
 onUnmounted(() => window.removeEventListener('keydown',keyDown))
 </script>
@@ -63,7 +64,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <VolumeX v-if="!p.volume.value" :size="19" class="text-[#a1a5bc]"/>
           <Volume2 v-else :size="19" class="text-[#a1a5bc]"/>
           <input aria-label="Volumen" type="range" min="0" max="1" step=".01" class="w-[86px]" :value="p.volume.value" @input="setVolume"/>
-          <button class="wm-player-icon" aria-label="Abrir reproductor completo" @click="p.expanded.value=true"><ChevronUp :size="22"/></button>
+          <button class="wm-player-icon" aria-label="Mostrar cola de reproducción" title="Cola de reproducción" @click="queueOpen=true"><ListMusic :size="22"/></button><button class="wm-player-icon" aria-label="Abrir reproductor completo" @click="p.expanded.value=true"><ChevronUp :size="22"/></button>
         </div>
       </div>
     </div>
@@ -97,10 +98,11 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <button class="rounded-full p-3 text-[#d1c6e9]" :aria-label="repeatLabel" :class="{'text-violet-300':p.repeatMode.value>0}" @click="p.cycleRepeat()"><Repeat1 v-if="p.repeatMode.value===2" :size="22"/><Repeat2 v-else :size="22"/></button>
         </div>
         <div class="mt-7 flex items-center gap-3 text-[#c9c0db]"><Volume2 :size="20"/><input aria-label="Volumen" type="range" min="0" max="1" step=".01" class="flex-1" :value="p.volume.value" @input="setVolume"/></div>
-        <p class="mt-7 text-center text-xs text-[#ada4bc]">Reproducción mediante enlace externo · Disponibilidad según su servidor</p>
+        <button class="mx-auto mt-5 flex items-center gap-2 rounded-full border border-white/15 px-4 py-2 text-xs text-violet-200 hover:bg-white/10" @click="p.expanded.value=false;queueOpen=true"><ListMusic :size="16"/> Ver cola de reproducción ({{p.queue.value.length}})</button><p class="mt-7 text-center text-xs text-[#ada4bc]">Reproducción mediante enlace externo · Disponibilidad según su servidor</p>
       </div>
     </section>
   </Transition>
+  <QueueDrawer :open="queueOpen" @close="queueOpen=false" />
 </Teleport>
 </template>
 <style scoped>

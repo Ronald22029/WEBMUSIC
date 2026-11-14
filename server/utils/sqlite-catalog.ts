@@ -78,6 +78,11 @@ export function getLocalSQLite():DatabaseSync|null {
     opened.exec('PRAGMA foreign_keys=ON')
     opened.exec('PRAGMA busy_timeout=3000')
     if(!opened.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='tracks'").get())throw new Error('El archivo SQLite no contiene el esquema de WEBMUSIC')
+    // Índices B-tree idempotentes para filtros frecuentes (sin borrar datos).
+    opened.exec('CREATE INDEX IF NOT EXISTS wm_idx_tracks_artist ON tracks(artist_id,published)')
+    opened.exec('CREATE INDEX IF NOT EXISTS wm_idx_tracks_album ON tracks(album_id,published,track_number)')
+    opened.exec('CREATE INDEX IF NOT EXISTS wm_idx_tracks_url ON tracks(audio_url)')
+    opened.exec('CREATE INDEX IF NOT EXISTS wm_idx_albums_artist ON albums(artist_id,year)')
     mergePreviousLocalEdits(opened)
     clearKnownIncorrectImportYears(opened)
     db=opened

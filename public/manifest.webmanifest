@@ -1,0 +1,20 @@
+{
+  "id": "/",
+  "name": "WEBMUSIC — Tu biblioteca musical",
+  "short_name": "WEBMUSIC",
+  "description": "Biblioteca musical de artistas, álbumes y canciones con enlaces externos.",
+  "lang": "es",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#080a11",
+  "theme_color": "#080a11",
+  "icons": [
+    {
+      "src": "/icons/webmusic.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

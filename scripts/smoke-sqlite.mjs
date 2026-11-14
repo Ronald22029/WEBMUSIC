@@ -44,7 +44,7 @@ try{
  }
  if(!launched)throw Error('Server did not launch: '+logs)
  // Comprobar el renderizado HTML SSR de páginas reales, no solo los endpoints JSON.
- for(const route of ['/', '/album/album-test', '/artista/test', '/canciones', '/albumes']){
+ for(const route of ['/', '/album/album-test', '/artista/test', '/canciones', '/albumes', '/playlists']){
    const pageResponse=await fetch(base+route)
    const html=await pageResponse.text()
    if(!pageResponse.ok || /Cannot access ['"]page['"] before initialization|__nuxt_error|Internal Server Error/.test(html)){
@@ -60,10 +60,16 @@ try{
  check(l.rows[0].title,'Prueba Escuchable','track title')
  const q=(await request('/api/tracks?q=Prueba&limit=10')).json
  check(q.total,1,'search')
+ const qualityUnauthorized=await fetch(base+'/api/admin/quality')
+ if(qualityUnauthorized.status!==401)throw Error('El diagnóstico debe estar protegido; HTTP '+qualityUnauthorized.status)
  const stats=(await request('/api/admin/auth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password})}))
  const cookie=stats.response.headers.get('set-cookie')?.split(';')[0]
  if(!cookie)throw Error('No session cookie')
  const headers={cookie,'content-type':'application/json'}
+ const quality=(await request('/api/admin/quality?kind=missing_cover',{headers:{cookie}})).json
+ check(quality.counts.missingCover,1,'missing covers in quality dashboard')
+ check(quality.counts.missingAudio,1,'missing audio in quality dashboard')
+ check(quality.rows.length,1,'quality result pagination')
  const overview=(await request('/api/admin/stats',{headers:{cookie}})).json
  check(overview.tracks,2,'admin sees hidden track')
  await request('/api/admin/tracks/t-test',{method:'PATCH',headers,body:JSON.stringify({title:'Título Actualizado',audioUrl:'https://example.com/new.mp3',published:true})})
