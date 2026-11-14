@@ -55,3 +55,8 @@ Cloudflare Free tiene límites diarios de solicitudes y consultas D1. Los metada
 - Si CieloPlay se vuelve público, revisa las licencias de música/portadas y si los proveedores permiten reproducción en tu dominio.
 - Antes de utilizar `--remote --apply`, conserva una copia de tu archivo `.data/webmusic/webmusic.sqlite`.
 - El plan actual mantiene la base local como fuente de desarrollo y usa D1 para producción, no sincroniza cambios automáticamente.
+
+## Caché pública y límites gratuitos
+Las rutas GET `/api/catalog` y `/api/tracks` utilizan la Cache API de Cloudflare cuando está disponible. El TTL es de 300 s para catálogo y 120 s para búsquedas. Los cambios administrativos pueden tardar ese tiempo en reflejarse en otras ubicaciones. No se cachea nada de `/api/admin/`, ninguna canción ni playlists personales.
+
+La búsqueda actual por fragmentos utiliza `LIKE '%texto%'`: puede resultar costosa en D1 con tráfico elevado. Antes de abrir al público es recomendable medir `rows_read` y considerar un índice FTS5. El plan gratuito no garantiza uso ilimitado.

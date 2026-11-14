@@ -3,6 +3,7 @@ import { readLocalCatalog } from '../utils/local-catalog'
 import { getLocalSQLite, sqliteTracks, cleanSearch } from '../utils/sqlite-catalog'
 import { optionalMusicDb } from '../utils/admin-db'
 import { tracksFromD1 } from '../utils/d1-catalog'
+import { cachedPublicD1 } from '../utils/public-cache'
 export default defineEventHandler(async event=>{
  const q=getQuery(event)
  const str=(v:unknown)=>typeof v==='string'?v.trim().slice(0,150):''
@@ -13,7 +14,7 @@ export default defineEventHandler(async event=>{
  const cloud=optionalMusicDb(event)
  if(cloud){
    setHeader(event,'cache-control','public, max-age=30, s-maxage=120, stale-while-revalidate=30')
-   return tracksFromD1(cloud,{artistId,albumId,genre,q:search,ids:ids.length?ids:undefined,limit,offset})
+   return cachedPublicD1(event,120,()=>tracksFromD1(cloud,{artistId,albumId,genre,q:search,ids:ids.length?ids:undefined,limit,offset}))
  }
  setHeader(event,'cache-control','no-store')
  const db=getLocalSQLite()

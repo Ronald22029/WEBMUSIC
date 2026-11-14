@@ -8,7 +8,7 @@ const dir=mkdtempSync(join(tmpdir(),'cieloplay-workerd-'))
 const port=String(38600+Math.floor(Math.random()*300))
 const base='http://127.0.0.1:'+port
 const execute=(args)=>{
- const result=spawnSync('npx',['wrangler',...args],{encoding:'utf8',env:process.env})
+ const result=spawnSync('npx',['wrangler',...args],{encoding:'utf8',env:process.env,timeout:45000})
  if(result.status!==0)throw Error('Wrangler '+args.join(' ')+' failed\n'+result.stdout+'\n'+result.stderr)
 }
 const fixture=join(dir,'seed.sql')
@@ -25,7 +25,7 @@ try{
  server.stdout.on('data',c=>{logs+=(String(c)).slice(-1000)})
  server.stderr.on('data',c=>{logs+=(String(c)).slice(-1000)})
  let ok=false
- for(let i=0;i<80;i++){
+ for(let i=0;i<70;i++){
   try{
    const res=await fetch(base+'/api/status')
    if(res.ok){const data=await res.json();if(data.storage==='cloudflare'&&data.tracks===1){ok=true;break}throw Error(JSON.stringify(data))}
