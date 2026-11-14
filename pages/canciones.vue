@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 const route=useRoute()
 const {data:catalog}=useCatalog()
-const query=ref('')
+const query=ref(String(route.query.q||''))
 const artistId=ref(String(route.query.artista||'all'))
 const genre=ref(String(route.query.genero||'all'))
 const page=ref(1)
