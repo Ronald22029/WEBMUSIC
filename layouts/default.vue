@@ -30,12 +30,26 @@ const suggestions = computed(() => {
 watch(()=>route.fullPath,()=>{menuOpen.value=false;searchFocused.value=false;search.value=String(route.query.q||'')})
 function submit() { if (search.value.trim()) { searchFocused.value=false; navigateTo('/buscar?q='+encodeURIComponent(search.value.trim())) } }
 function go(to:string){searchFocused.value=false;menuOpen.value=false;navigateTo(to)}
+// Los globales no se resuelven dentro de expresiones de la plantilla Vue:
+// usar una función de setup evita el error "_ctx.setTimeout is not a function".
+let searchBlurTimer:ReturnType<typeof setTimeout>|undefined
+function deferSearchBlur(){
+ if(searchBlurTimer)clearTimeout(searchBlurTimer)
+ searchBlurTimer=setTimeout(()=>{searchFocused.value=false},180)
+}
+function focusSearch(){
+ if(searchBlurTimer)clearTimeout(searchBlurTimer)
+ searchFocused.value=true
+}
 function keydown(e:KeyboardEvent){
  if (e.key==='/' && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLTextAreaElement)){e.preventDefault();input.value?.focus()}
  if (e.key==='Escape'){searchFocused.value=false;input.value?.blur();menuOpen.value=false}
 }
 onMounted(()=>window.addEventListener('keydown',keydown))
-onUnmounted(()=>window.removeEventListener('keydown',keydown))
+onUnmounted(()=>{
+ window.removeEventListener('keydown',keydown)
+ if(searchBlurTimer)clearTimeout(searchBlurTimer)
+})
 </script>
 <template>
 <div class="min-h-screen bg-[#080a11] text-white">
@@ -67,7 +81,7 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
    <button class="rounded-lg p-2 text-[#bcbdd0] lg:hidden" aria-label="Abrir menú" @click="menuOpen=true"><Menu :size="23"/></button>
    <form class="relative max-w-[620px] flex-1" role="search" @submit.prevent="submit">
     <Search :size="18" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#9094a9]"/>
-    <input ref="input" v-model="search" autocomplete="off" aria-label="Buscar artistas, álbumes o canciones" placeholder="¿Qué quieres escuchar?" class="h-11 w-full rounded-2xl border border-white/[.08] bg-[#1b1e2c] pl-11 pr-11 text-sm text-white transition outline-none placeholder:text-[#8d90a4] focus:border-violet-500/70 focus:bg-[#202336]" @focus="searchFocused=true" @blur="setTimeout(()=>searchFocused=false,180)"/>
+    <input ref="input" v-model="search" autocomplete="off" aria-label="Buscar artistas, álbumes o canciones" placeholder="¿Qué quieres escuchar?" class="h-11 w-full rounded-2xl border border-white/[.08] bg-[#1b1e2c] pl-11 pr-11 text-sm text-white transition outline-none placeholder:text-[#8d90a4] focus:border-violet-500/70 focus:bg-[#202336]" @focus="focusSearch" @blur="deferSearchBlur"/>
     <button v-if="search" type="button" class="absolute right-3 top-3 text-[#8f92a5] hover:text-white" aria-label="Borrar búsqueda" @click="search=''"><X :size="18"/></button>
     <span v-else class="pointer-events-none absolute right-4 top-3 hidden rounded border border-white/10 px-2 py-0.5 text-[10px] text-[#85899c] md:block">/</span>
     <div v-if="searchFocused && suggestions.length" class="absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#202332] p-2 shadow-2xl shadow-black/60">
