@@ -13,10 +13,10 @@ export default defineEventHandler(async event => {
  const albums=new Map(parsed.rows.map(r=>[r.albumId,r]))
  const statements=[]
  for(const r of artists.values())statements.push(db.prepare(
-  'INSERT OR IGNORE INTO artists(id,name,slug,description,cover,accent,published) VALUES(?,?,?,?,?,?,1)'
+  "INSERT OR IGNORE INTO artists(id,name,slug,description,cover,accent,genre,source_url,published) VALUES(?,?,?,?,?,?,?,'',1)"
  ).bind(r.artistId,r.artistName,r.artistSlug,'Discografía de '+r.artistName,r.cover,'#a17aff',r.genre))
  for(const r of albums.values())statements.push(db.prepare(
-  'INSERT OR IGNORE INTO albums(id,title,slug,artist_id,year,cover,genre,release_type,source_url,published) VALUES(?,?,?,?,?,?,?,?,'',1)'
+  "INSERT OR IGNORE INTO albums(id,title,slug,artist_id,year,cover,genre,release_type,source_url,published) VALUES(?,?,?,?,?,?,?,?,'',1)"
  ).bind(r.albumId,r.albumTitle,r.albumSlug,r.artistId,r.year,r.cover,r.genre,r.releaseType))
  for(const r of parsed.rows)statements.push(db.prepare(
   "INSERT INTO tracks(id,title,slug,artist_id,album_id,duration,audio_url,cover,plays,track_number,source_status,source_page,published,search_text) "+
