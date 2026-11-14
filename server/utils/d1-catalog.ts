@@ -34,14 +34,17 @@ export async function tracksFromD1(db:MusicDatabase,p:D1TrackParams) {
  if(p.q){
    // SQL bind y escaping de comodines; no permitir % de usuario como wildcard.
    // D1 se indexará por prefijo; consultas substring pueden consumir más filas.
-   const term=p.q.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()
+   let term=p.q.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim()
     .replace(/[%_\\]/g,'').slice(0,100)
+   // D1 admite como máximo 50 bytes por patrón LIKE, incluidos los %.
+   const encoder=new TextEncoder()
+   while(encoder.encode(term).length>46)term=term.slice(0,-1)
    if(term){wheres.push("t.search_text LIKE ?");args.push('%'+term+'%')}
  }
  const from=' FROM tracks t JOIN albums al ON al.id=t.album_id'
  const where=wheres.length?' WHERE '+wheres.join(' AND '):''
  const offset=Math.min(10_000_000,Math.max(0,Number(p.offset)||0))
- const limit=Math.min(80,Math.max(1,Number(p.limit)||30))
+ const limit=Math.min(250,Math.max(1,Number(p.limit)||30))
  const sort=p.albumId?' ORDER BY t.track_number ASC,t.title ASC':' ORDER BY t.rowid DESC'
  const [count,rows] = await Promise.all([
    db.prepare('SELECT COUNT(*) AS total'+from+where).bind(...args).first<{total:number}>(),

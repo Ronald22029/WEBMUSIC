@@ -9,7 +9,7 @@ export default defineEventHandler(async event=>{
  const str=(v:unknown)=>typeof v==='string'?v.trim().slice(0,150):''
  const artistId=str(q.artistId),albumId=str(q.albumId),genre=str(q.genre),search=str(q.q)
  const ids=str(q.ids).split(',').map(v=>v.trim()).filter(Boolean).slice(0,80)
- const limit=Math.max(1,Math.min(80,Number(q.limit)||30))
+ const limit=Math.max(1,Math.min(250,Number(q.limit)||30))
  const offset=Math.max(0,Math.min(10000000,Number(q.offset)||0))
  const cloud=optionalMusicDb(event)
  if(cloud){
