@@ -30,8 +30,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
       <div class="mx-auto grid max-w-[1600px] grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 pb-2.5 pt-2.5 md:grid-cols-[minmax(170px,1fr)_minmax(230px,1.45fr)_minmax(140px,1fr)] md:gap-x-5 md:px-5 lg:px-8">
         <div class="flex min-w-0 items-center gap-3">
           <button type="button" class="relative h-[52px] w-[52px] shrink-0 overflow-hidden rounded-xl bg-[#292a42] shadow-lg transition hover:scale-[1.035]" :aria-label="'Abrir reproductor de '+currentTitle" @click="p.expanded.value=true">
-            <img v-if="cover" :src="cover" alt="" class="h-full w-full object-cover"/>
-            <span v-else class="flex h-full w-full items-center justify-center text-violet-200"><Music2 :size="25"/></span>
+            <SmartCover :src="cover" :width="56" :height="56" alt="Portada de reproducción" eager class="h-full w-full object-cover"/>
             <span v-if="p.playing.value" class="absolute inset-x-0 bottom-0 flex h-6 items-center justify-center bg-black/65"><EqualizerBars active small/></span>
           </button>
           <div class="min-w-0 flex-1">
@@ -80,8 +79,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
         <div class="relative mx-auto mb-9 w-[min(100%,320px)]">
           <div class="wm-disc" :class="{'wm-disc--playing':p.playing.value}"/>
           <div class="relative mx-auto aspect-square w-[92%] overflow-hidden rounded-[28px] border border-white/20 bg-[#29263d] shadow-[0_30px_80px_rgba(0,0,0,.6)]">
-            <img v-if="cover" :src="cover" alt="" class="h-full w-full object-cover"/>
-            <span v-else class="flex h-full w-full items-center justify-center"><Music2 :size="80" class="text-violet-300"/></span>
+            <SmartCover :src="cover" :width="360" :height="360" alt="Portada actual" eager class="h-full w-full object-cover"/>
             <span v-if="p.playing.value" class="absolute bottom-4 right-4 rounded-full bg-[#11111c]/80 p-3"><EqualizerBars active/></span>
           </div>
         </div>

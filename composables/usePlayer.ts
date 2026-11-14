@@ -6,6 +6,20 @@ export type QueueScope = {
   offset: number; loaded?: number; total?: number
 }
 let element: HTMLAudioElement | null = null
+let revision = 0
+let bufferingTimer: ReturnType<typeof setTimeout> | null = null
+let retryTimer: ReturnType<typeof setTimeout> | null = null
+let recoveryPending = false
+let failuresInRow = 0
+const attempts = new Map<string, number>()
+const MAX_CONSECUTIVE_FAILURES = 6
+const START_TIMEOUT_MS = 16000
+const STALL_TIMEOUT_MS = 22000
+function clearRecoveryTimers() {
+  if (bufferingTimer) clearTimeout(bufferingTimer)
+  if (retryTimer) clearTimeout(retryTimer)
+  bufferingTimer = retryTimer = null
+}
 // Un objeto Audio compartido durante la sesión; nunca serializarlo en useState.
 export function usePlayer() {
   const current = useState<Track | null>('current-track', () => null)
@@ -25,30 +39,102 @@ export function usePlayer() {
   const { data: catalog } = useNuxtData<Catalog>('music-catalog')
   const library = useLocalLibrary()
 
+  function scheduleStallTimeout(timeout: number, currentRevision = revision) {
+    if (bufferingTimer) clearTimeout(bufferingTimer)
+    bufferingTimer = setTimeout(() => {
+      if (currentRevision === revision && current.value && buffering.value) {
+        handlePlaybackFailure('El servidor dejó de responder.', currentRevision)
+      }
+    }, timeout)
+  }
+
+  function handlePlaybackFailure(reason: string, currentRevision = revision, permissionBlocked = false) {
+    if (currentRevision !== revision || recoveryPending || !current.value) return
+    recoveryPending = true
+    clearRecoveryTimers()
+    buffering.value = false
+    playing.value = false
+    const audio = element
+    audio?.pause()
+    const track = current.value
+    if (permissionBlocked) {
+      error.value = 'El navegador bloqueó la reproducción. Pulsa Reproducir para continuar.'
+      recoveryPending = false
+      return
+    }
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      error.value = 'Sin conexión. Comprueba internet y pulsa Reproducir para reintentar.'
+      recoveryPending = false
+      return
+    }
+    const count = attempts.get(track.id) || 0
+    if (count < 1) {
+      attempts.set(track.id, count + 1)
+      error.value = `Problema con «${track.title}». Reintentando una vez…`
+      retryTimer = setTimeout(() => {
+        if (revision !== currentRevision) return
+        recoveryPending = false
+        void start(track, undefined, undefined, true)
+      }, 800)
+    } else {
+      failuresInRow++
+      error.value = failuresInRow >= MAX_CONSECUTIVE_FAILURES
+        ? 'Varias canciones consecutivas fallaron. Se detuvo la reproducción para evitar un ciclo.'
+        : `No se pudo escuchar «${track.title}»: ${reason} Saltando a la siguiente canción.`
+      if (failuresInRow >= MAX_CONSECUTIVE_FAILURES) {
+        recoveryPending = false
+        audio?.pause()
+        return
+      }
+      retryTimer = setTimeout(() => {
+        if (revision !== currentRevision) return
+        recoveryPending = false
+        void next(true)
+      }, 550)
+    }
+  }
+
   function ensureAudio() {
     if (import.meta.server) return null
     if (!element) {
       const audio = new Audio()
       audio.preload = 'metadata'
       audio.volume = volume.value
-      audio.addEventListener('timeupdate', () => { position.value = audio.currentTime || 0 })
+      audio.addEventListener('timeupdate', () => {
+        position.value = audio.currentTime || 0
+        if (buffering.value && !audio.paused) scheduleStallTimeout(STALL_TIMEOUT_MS)
+        // Unos segundos de audio real demuestran que el enlace funciona;
+        // no considerar un simple evento "playing" como reproducción estable.
+        if (!buffering.value && audio.currentTime >= 5 && current.value) {
+          failuresInRow = 0
+          attempts.delete(current.value.id)
+        }
+      })
       audio.addEventListener('durationchange', () => { duration.value = Number.isFinite(audio.duration) ? audio.duration : 0 })
       audio.addEventListener('loadedmetadata', () => { duration.value = Number.isFinite(audio.duration) ? audio.duration : 0 })
-      audio.addEventListener('waiting', () => { buffering.value = true })
-      audio.addEventListener('canplay', () => { buffering.value = false })
-      audio.addEventListener('playing', () => { buffering.value = false; playing.value = true })
+      audio.addEventListener('waiting', () => {
+        if (!audio.paused) { buffering.value = true; scheduleStallTimeout(STALL_TIMEOUT_MS) }
+      })
+      audio.addEventListener('stalled', () => {
+        if (!audio.paused) { buffering.value = true; scheduleStallTimeout(STALL_TIMEOUT_MS) }
+      })
+      audio.addEventListener('canplay', () => { if (!audio.paused) buffering.value = false })
+      audio.addEventListener('playing', () => {
+        if (bufferingTimer) clearTimeout(bufferingTimer)
+        bufferingTimer = null
+        buffering.value = false; playing.value = true
+      })
       audio.addEventListener('pause', () => { playing.value = false })
       audio.addEventListener('ended', () => {
         playing.value = false
         if (repeatMode.value === 2) {
           audio.currentTime = 0
-          void audio.play().catch(() => { error.value = 'No se pudo repetir esta canción.' })
-        } else void next()
+          const endedRevision = revision
+          void audio.play().catch(() => handlePlaybackFailure('No se pudo repetir la pista.',endedRevision))
+        } else void next(true)
       })
       audio.addEventListener('error', () => {
-        playing.value = false
-        buffering.value = false
-        error.value = 'No se pudo reproducir el enlace externo. Comprueba la URL o su disponibilidad.'
+        if (current.value) handlePlaybackFailure('El enlace externo no responde.')
       })
       element = audio
     }
@@ -72,9 +158,16 @@ export function usePlayer() {
     safeHandler('seekto', ({ seekTime }) => { if (typeof seekTime === 'number') seek(seekTime) })
   }
 
-  async function start(track: Track, list?: Track[], scope?: QueueScope) {
+  async function start(track: Track, list?: Track[], scope?: QueueScope, automatic = false) {
+    const thisRevision = ++revision
+    clearRecoveryTimers()
+    recoveryPending = false
+    if (!automatic) { failuresInRow = 0; attempts.clear() }
     if (!/^https:\/\//i.test(track.audioUrl)) {
-      error.value = 'La canción no tiene un enlace HTTPS válido. Revisa el catálogo.'
+      if (automatic) {
+        current.value = track
+        handlePlaybackFailure('No contiene enlace HTTPS.', thisRevision)
+      } else error.value = 'La canción no tiene un enlace HTTPS válido. Revisa el catálogo.'
       return
     }
     const audio = ensureAudio()
@@ -88,8 +181,8 @@ export function usePlayer() {
       if (found < 0) { queue.value = [track]; index.value = 0; queueScope.value = null }
       else index.value = found
     }
-    error.value = ''
-    const different = current.value?.id !== track.id || audio.src !== track.audioUrl
+    if (!automatic) error.value = ''
+    const different = current.value?.id !== track.id || audio.src !== track.audioUrl || !!audio.error || (automatic && (attempts.get(track.id)||0)>0)
     current.value = track
     if (different) {
       audio.pause()
@@ -99,24 +192,50 @@ export function usePlayer() {
       audio.load()
     }
     buffering.value = true
+    scheduleStallTimeout(START_TIMEOUT_MS, thisRevision)
     try {
       await audio.play()
+      if (thisRevision !== revision) return
       playing.value = true
       buffering.value = false
+      if (bufferingTimer) clearTimeout(bufferingTimer)
+      bufferingTimer = null
       syncMediaSession(track)
       library.remember(track.id)
-    } catch {
-      playing.value = false
-      buffering.value = false
-      error.value = 'No se pudo iniciar el audio. El servidor externo puede impedir la reproducción.'
+    } catch (cause) {
+      if (thisRevision !== revision) return
+      const permissionBlocked = cause instanceof DOMException && cause.name === 'NotAllowedError'
+      handlePlaybackFailure('El servidor externo impidió reproducirla.', thisRevision, permissionBlocked)
     }
   }
-  function pause() { ensureAudio()?.pause(); playing.value = false }
+  function pause() {
+    ++revision
+    clearRecoveryTimers()
+    recoveryPending = false
+    ensureAudio()?.pause()
+    buffering.value = false
+    playing.value = false
+  }
   async function resume() {
     const audio = ensureAudio()
     if (!audio || !current.value) return
-    try { await audio.play(); playing.value = true; error.value = '' }
-    catch { playing.value = false; error.value = 'El navegador no permitió reanudar la reproducción.' }
+    const currentTrack = current.value
+    if (audio.error || !audio.src) { await start(currentTrack); return }
+    const thisRevision = ++revision
+    clearRecoveryTimers()
+    recoveryPending = false
+    buffering.value = true
+    scheduleStallTimeout(START_TIMEOUT_MS, thisRevision)
+    try {
+      await audio.play()
+      if (revision !== thisRevision) return
+      playing.value = true; buffering.value = false; error.value = ''
+      if (bufferingTimer) clearTimeout(bufferingTimer)
+      bufferingTimer = null
+    } catch (cause) {
+      if (revision !== thisRevision) return
+      handlePlaybackFailure('No se pudo reanudar.', thisRevision,cause instanceof DOMException && cause.name==='NotAllowedError')
+    }
   }
   function toggle() { if (playing.value) pause(); else void resume() }
 
@@ -145,25 +264,28 @@ export function usePlayer() {
     } finally { loadingMore.value = false }
   }
 
-  async function next() {
+  async function next(automatic = false) {
+    if (!automatic) { failuresInRow = 0; attempts.clear(); clearRecoveryTimers(); recoveryPending = false }
+    const originRevision = revision
     if (!queue.value.length || loadingMore.value) return
     if (index.value < queue.value.length - 1) {
       if (shuffle.value && queue.value.length > 1) {
         const choices = queue.value.map((_, i) => i).filter(i => i !== index.value)
         const selected = choices[Math.floor(Math.random() * choices.length)]
-        if (selected !== undefined && queue.value[selected]) void start(queue.value[selected])
+        if (selected !== undefined && queue.value[selected]) void start(queue.value[selected],undefined,undefined,automatic)
       } else {
         const following = queue.value[index.value+1]
-        if (following) void start(following)
+        if (following) void start(following,undefined,undefined,automatic)
       }
       return
     }
     if (await loadNextPage()) {
+      if (originRevision !== revision) return
       const following = queue.value[index.value+1]
       if (following) void start(following)
       return
     }
-    if (repeatMode.value === 1 && queue.value[0]) void start(queue.value[0])
+    if (repeatMode.value === 1 && queue.value[0]) void start(queue.value[0],undefined,undefined,automatic)
     else pause()
   }
   function previous() {

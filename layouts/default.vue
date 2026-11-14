@@ -72,7 +72,7 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
     <span v-else class="pointer-events-none absolute right-4 top-3 hidden rounded border border-white/10 px-2 py-0.5 text-[10px] text-[#85899c] md:block">/</span>
     <div v-if="searchFocused && suggestions.length" class="absolute left-0 right-0 top-[52px] z-50 overflow-hidden rounded-2xl border border-white/10 bg-[#202332] p-2 shadow-2xl shadow-black/60">
      <button v-for="s in suggestions" :key="s.to+s.name" type="button" class="flex w-full items-center gap-3 rounded-xl p-2 text-left hover:bg-white/[.08]" @mousedown.prevent="go(s.to)">
-      <img v-if="s.cover" :src="s.cover" :alt="s.name" class="h-10 w-10 rounded-lg object-cover"/>
+      <SmartCover :src="s.cover" :alt="s.name" :width="40" :height="40" class="h-10 w-10 rounded-lg object-cover"/>
       <div class="min-w-0 flex-1"><span class="block truncate text-sm font-semibold">{{s.name}}</span><span class="text-[11px] text-[#a9a9b8]">{{s.meta}}</span></div><ArrowUpRight :size="15" class="text-[#8a8fa2]"/>
      </button>
      <button type="submit" class="w-full rounded-xl px-3 py-2 text-left text-xs font-semibold text-violet-300 hover:bg-white/5">Ver todos los resultados para “{{search}}”</button>

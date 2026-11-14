@@ -21,7 +21,7 @@ useSeoMeta({
   <NuxtLink to="/albumes" class="mb-6 inline-block text-xs font-semibold text-violet-300 hover:text-white">← Todos los álbumes</NuxtLink>
   <div class="relative mb-9 flex flex-col items-start gap-7 overflow-hidden rounded-3xl border border-white/[.06] bg-gradient-to-br from-violet-900/20 to-[#181b27] p-6 sm:flex-row sm:items-end sm:p-8">
     <div class="absolute -right-16 -top-16 h-60 w-60 rounded-full bg-violet-600/10 blur-3xl"/>
-    <img v-if="album.cover" :src="album.cover" :alt="'Portada de '+album.title" class="relative aspect-square w-52 flex-none rounded-2xl object-cover shadow-2xl sm:w-56"/>
+    <SmartCover :src="album.cover" :alt="'Portada de '+album.title" :width="224" :height="224" eager class="relative aspect-square w-52 flex-none rounded-2xl object-cover shadow-2xl sm:w-56"/>
     <div class="relative min-w-0">
       <p class="mb-3 text-xs font-bold uppercase tracking-widest text-violet-400">{{album.releaseType||'Álbum'}}</p>
       <h1 class="break-words text-3xl font-black tracking-tight md:text-5xl">{{album.title}}</h1>

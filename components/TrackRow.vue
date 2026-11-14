@@ -18,8 +18,7 @@ function play(){void player.start(props.track,props.queue,props.scope)}
    <span v-else class="group-hover:hidden">{{track.trackNumber||index+1}}</span>
    <Play v-if="!(selected&&player.playing.value)" :size="15" class="hidden group-hover:block"/>
   </span>
-  <img v-if="track.cover||album?.cover" :src="track.cover||album?.cover" :alt="'Portada de '+track.title" loading="lazy" class="h-11 w-11 flex-none rounded-lg bg-[#272a38] object-cover"/>
-  <div v-else class="flex h-11 w-11 flex-none items-center justify-center rounded-lg bg-[#272a38] text-violet-300">♪</div>
+  <SmartCover :src="track.cover||album?.cover" :alt="'Portada de '+track.title" :width="44" :height="44" class="h-11 w-11 flex-none rounded-lg bg-[#272a38] object-cover"/>
   <span class="min-w-0 flex-1">
    <span class="block truncate text-sm font-semibold" :class="selected?'text-violet-300':'text-[#ececf5]'">{{track.title}}</span>
    <span class="mt-1 block truncate text-xs text-[#9297a9]">{{artist?.name||'Artista'}}</span>

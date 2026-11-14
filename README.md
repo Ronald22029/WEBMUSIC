@@ -122,3 +122,13 @@ Las URL pueden estar caídas, ser temporales o bloquear reproducción externa; u
 - Ver `docs/publicacion-android.md` para controles previos a una futura publicación.
 
 **Respaldo:** conserva tu archivo privado `.data/webmusic/webmusic.sqlite` y favoritos/playlists del navegador antes de limpiar datos o reinstalar Windows. `git pull` actualiza código, no crea copias de la base ni sincroniza playlists.
+
+## Recuperación de reproducción y portadas (CieloPlay)
+
+- Cuando una fuente externa falla, el reproductor **reintenta una vez** y, si sigue fallando, intenta avanzar a la siguiente pista de la cola.
+- Si se producen seis fallos consecutivos sin reproducción estable, se detiene para evitar ciclos infinitos (incluso cuando está activa la repetición).
+- Si el navegador bloquea la reproducción por permisos o no hay conexión, se detiene y solicita una interacción manual; no intenta saltar restricciones de la plataforma externa.
+- Incluye límites de tiempo para un inicio de audio que no responde (16 s) y para una reproducción que se queda esperando datos (22 s). Los errores se muestran junto al reproductor.
+- Las portadas usan carga diferida, decodificación asíncrona, dimensiones explícitas y un reemplazo visual si la URL está ausente o no carga. El logo y la portada destacada no se retrasan.
+- **No se comprimen ni modifican archivos remotos**: el navegador sigue descargando los tamaños originales que sirva cada proveedor. Un futuro servicio de imágenes con permiso, caché y variantes de tamaño sería necesario para reducir esos bytes de verdad.
+- Ni el catálogo musical ni SQLite cambian con estas mejoras.

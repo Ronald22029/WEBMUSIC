@@ -32,7 +32,7 @@ useSeoMeta({
   <NuxtLink to="/artistas" class="mb-6 inline-block text-xs font-semibold text-violet-300 hover:text-white">← Todos los artistas</NuxtLink>
   <div class="relative mb-10 flex flex-col items-center gap-7 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-violet-700/25 to-[#191b28] p-7 text-center sm:flex-row sm:text-left md:p-10">
     <div class="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-violet-500/10 blur-3xl"/>
-    <img v-if="artist.cover" :src="artist.cover" :alt="artist.name" class="relative h-40 w-40 flex-none rounded-full border-4 border-white/10 object-cover shadow-2xl md:h-52 md:w-52"/>
+    <SmartCover :src="artist.cover" :alt="artist.name" :width="208" :height="208" eager class="relative h-40 w-40 flex-none rounded-full border-4 border-white/10 object-cover shadow-2xl md:h-52 md:w-52"/>
     <div class="relative"><p class="mb-2 text-xs font-bold uppercase tracking-widest text-violet-400">Artista</p>
       <h1 class="text-4xl font-black tracking-tight md:text-5xl">{{artist.name}}</h1>
       <p class="mt-3 max-w-xl text-sm leading-6 text-[#c2bfd2]">{{artist.description}}</p>

@@ -25,7 +25,7 @@ useSeoMeta({title:'CieloPlay — Descubre tu próxima canción',description:'Exp
     <p class="mt-3 text-sm text-[#989eb1]">Explora {{data.counts?.artists ?? data.artists.length}} artistas, {{data.counts?.albums ?? data.albums.length}} álbumes y {{data.counts?.tracks ?? data.tracks.length}} canciones.</p>
   </header>
   <section v-if="featured" class="music-shimmer relative mb-11 min-h-[270px] overflow-hidden rounded-[26px] border border-white/10 bg-[#302346] lg:min-h-[325px]">
-    <img v-if="featured.cover" :src="featured.cover" alt="" class="absolute inset-0 h-full w-full object-cover opacity-35"/>
+    <SmartCover :src="featured.cover" :width="1000" :height="400" alt="" eager class="absolute inset-0 h-full w-full object-cover opacity-35"/>
     <div class="absolute inset-0 bg-gradient-to-r from-[#241533]/95 via-[#241533]/75 to-[#141624]/30"/>
     <div class="motion-rise relative flex min-h-[270px] max-w-2xl flex-col justify-center p-6 sm:p-9 lg:min-h-[325px] lg:p-12">
       <span class="mb-4 w-fit rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-extrabold uppercase tracking-widest text-violet-100">Destacado de la semana</span>
