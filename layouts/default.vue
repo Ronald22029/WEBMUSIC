@@ -41,11 +41,11 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
 <div class="min-h-screen bg-[#080a11] text-white">
  <div v-if="menuOpen" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden" @click="menuOpen=false"/>
  <aside :class="menuOpen?'translate-x-0':'-translate-x-full'" class="fixed inset-y-0 left-0 z-50 w-[248px] border-r border-white/[.065] bg-[#10131c] transition-transform duration-300 lg:translate-x-0">
-  <div class="flex h-24 items-center gap-3 px-6">
-   <NuxtLink to="/" aria-label="CieloPlay — ir al inicio" class="flex min-w-0 items-center" title="CieloPlay">
-    <img src="/branding/cieloplay-logo.jpg" width="190" height="48" alt="CieloPlay" class="h-auto w-[190px] max-w-full object-contain mix-blend-screen" decoding="async" fetchpriority="high"/>
+  <div class="relative isolate flex h-24 items-center gap-2 px-5">
+   <NuxtLink to="/" aria-label="CieloPlay — ir al inicio" class="relative flex min-w-0 flex-1 items-center justify-start overflow-visible" title="CieloPlay">
+    <img src="/branding/cieloplay-logo.png?v=2" width="200" height="50" alt="CieloPlay" class="block h-auto w-full max-w-[200px] flex-none object-contain object-left select-none" decoding="async" fetchpriority="high" draggable="false"/>
    </NuxtLink>
-   <button class="ml-auto lg:hidden" aria-label="Cerrar menú" @click="menuOpen=false"><X :size="22"/></button>
+   <button class="ml-auto shrink-0 lg:hidden" aria-label="Cerrar menú" @click="menuOpen=false"><X :size="22"/></button>
   </div>
   <div class="px-4 pt-6">
    <p class="mb-3 px-4 text-[10px] font-extrabold uppercase tracking-[.24em] text-[#6e7285]">Explorar</p>
