@@ -18,7 +18,7 @@ function create(){
 }
 function remove(id:string){library.deletePlaylist(id);if(selected.value===id)selected.value=null}
 function play(){if(tracks.value[0])void player.start(tracks.value[0],tracks.value)}
-useSeoMeta({title:'Mis playlists | WEBMUSIC',robots:'noindex,follow'})
+useSeoMeta({title:'Mis playlists | CieloPlay',robots:'noindex,follow'})
 </script>
 <template>
 <NuxtLayout>

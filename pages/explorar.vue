@@ -3,7 +3,7 @@ import { Sparkles, Disc3, Users, Music2 } from 'lucide-vue-next'
 const {data}=useCatalog()
 const latest=computed(()=>[...data.value.albums].sort((a,b)=>b.year-a.year).slice(0,12))
 const genres=computed(()=>[...new Set(data.value.albums.map(a=>a.genre).filter(Boolean))].sort())
-useSeoMeta({title:'Explorar música | WEBMUSIC',description:'Explora géneros, artistas y discos musicales en WEBMUSIC.'})
+useSeoMeta({title:'Explorar música | CieloPlay',description:'Explora géneros, artistas y discos musicales en CieloPlay.'})
 </script>
 <template>
 <NuxtLayout>

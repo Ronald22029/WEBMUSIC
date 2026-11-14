@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Plus, Pencil, Save, X, Users, Disc3, Database, Search } from 'lucide-vue-next'
 definePageMeta({layout:false})
-useSeoMeta({title:'Gestionar artistas y álbumes | WEBMUSIC',robots:'noindex,nofollow'})
+useSeoMeta({title:'Gestionar artistas y álbumes | CieloPlay',robots:'noindex,nofollow'})
 type Artist = {id:string;name:string;slug:string;cover:string;description:string;albums:number;tracks:number}
 type Album = {id:string;title:string;slug:string;artistId:string;artistName:string;year:number;cover:string;genre?:string;releaseType?:string;tracks:number}
 const {data:session,pending}=await useFetch<{authenticated:boolean;storage?:string}>('/api/admin/auth/session')

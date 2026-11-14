@@ -16,7 +16,7 @@ const filters=computed(()=>({
 const {data:result,pending}=useTracks(filters)
 const pageCount=computed(()=>Math.max(1,Math.ceil(result.value.total/pageSize)))
 watch([query,artistId,genre],()=>{page.value=1})
-useSeoMeta({title:'Canciones | WEBMUSIC',description:'Explora canciones, artistas y géneros musicales.'})
+useSeoMeta({title:'Canciones | CieloPlay',description:'Explora canciones, artistas y géneros musicales.'})
 </script>
 <template>
 <NuxtLayout>

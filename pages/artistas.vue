@@ -13,7 +13,7 @@ const artists=computed(()=>{
 })
 const visible=computed(()=>artists.value.slice((page.value-1)*pageSize,page.value*pageSize))
 watch([search,sort],()=>page.value=1)
-useSeoMeta({title:'Artistas | WEBMUSIC',description:'Explora artistas, canciones y discografías de WEBMUSIC.'})
+useSeoMeta({title:'Artistas | CieloPlay',description:'Explora artistas, canciones y discografías de CieloPlay.'})
 </script>
 <template>
 <NuxtLayout>

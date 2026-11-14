@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="CieloPlay">
+ <defs><linearGradient id="cp" x1="0" y1="0" x2=".3" y2="1"><stop stop-color="#9b37ff"/><stop offset=".56" stop-color="#524bff"/><stop offset="1" stop-color="#03bafa"/></linearGradient><clipPath id="play"><path d="M58 19C45 12 28 23 28 41v110c0 22 22 31 40 20l99-55c18-10 18-29 0-39L68 22c-4-2-7-3-10-3z"/></clipPath></defs>
+ <rect width="192" height="192" rx="38" fill="#050711"/>
+ <path d="M58 19C45 12 28 23 28 41v110c0 22 22 31 40 20l99-55c18-10 18-29 0-39L68 22c-4-2-7-3-10-3z" fill="url(#cp)"/>
+ <g clip-path="url(#play)"><path d="M25 139c16-27 39-38 59-20 19-9 37-3 47 16 13-7 26-5 39 6l-71 47H25z" fill="#fff"/><path d="M81 45h13v30h26v13H94v59H81V88H56V75h25z" fill="#080912"/></g>
+</svg>

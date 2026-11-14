@@ -8,7 +8,7 @@ const matches=(s:string)=>normalize(s).includes(normalize(query.value))
 const artists=computed(()=>query.value?data.value.artists.filter(a=>matches(a.name)) :[])
 const albums=computed(()=>query.value?data.value.albums.filter(a=>matches(a.title)||matches(data.value.artists.find(x=>x.id===a.artistId)?.name||'')) :[])
 const {data:tracks,pending}=useTracks(computed(()=>({q:query.value||'__no_search__',limit:30,offset:0})))
-useSeoMeta({title:()=>query.value?'Buscar '+query.value+' | WEBMUSIC':'Buscar música | WEBMUSIC',robots:'noindex,follow'})
+useSeoMeta({title:()=>query.value?'Buscar '+query.value+' | CieloPlay':'Buscar música | CieloPlay',robots:'noindex,follow'})
 </script>
 <template>
 <NuxtLayout>

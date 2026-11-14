@@ -6,7 +6,7 @@ const ids=computed(()=>[...new Set([...lib.favorites.value,...lib.recent.value])
 const {data:myTracks}=useTrackIds(ids,'webmusic-library-ids')
 const favorites=computed(()=>lib.favoriteTracks(myTracks.value.rows))
 const recent=computed(()=>lib.recentTracks(myTracks.value.rows))
-useSeoMeta({title:'Mi biblioteca | WEBMUSIC',robots:'noindex,follow'})
+useSeoMeta({title:'Mi biblioteca | CieloPlay',robots:'noindex,follow'})
 </script>
 <template>
 <NuxtLayout>

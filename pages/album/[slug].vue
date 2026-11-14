@@ -10,7 +10,7 @@ const {data:trackResponse} = useTracks(computed(()=>({albumId:album.value?.id||'
 const tracks=computed(()=>trackResponse.value.rows)
 watch(()=>album.value?.id,()=>{page.value=1})
 useSeoMeta({
- title:()=>album.value?album.value.title+' — '+artist.value?.name+' | WEBMUSIC':'Álbum | WEBMUSIC',
+ title:()=>album.value?album.value.title+' — '+artist.value?.name+' | CieloPlay':'Álbum | CieloPlay',
  description:()=>album.value?'Explora '+trackResponse.value.total+' canciones del álbum '+album.value.title+' de '+artist.value?.name+'.':'Explora álbumes musicales.',
  ogImage:()=>album.value?.cover
 })

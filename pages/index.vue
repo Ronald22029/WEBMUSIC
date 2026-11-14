@@ -13,7 +13,7 @@ const popular = computed(() => data.value.tracks.slice(0,8))
 const recentIds=computed(()=>lib.recent.value.slice(0,30))
 const {data:history} = useTrackIds(recentIds,'webmusic-home-recent')
 const latest = computed(() => lib.recentTracks(history.value.rows).slice(0,5))
-useSeoMeta({title:'WEBMUSIC — Descubre tu próxima canción',description:'Explora artistas, álbumes y canciones. Organiza tus favoritos y descubre música en WEBMUSIC.'})
+useSeoMeta({title:'CieloPlay — Descubre tu próxima canción',description:'Explora artistas, álbumes y canciones. Organiza tus favoritos y descubre música en CieloPlay.'})
 </script>
 <template>
 <NuxtLayout>

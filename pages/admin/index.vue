@@ -2,7 +2,7 @@
 import { ArrowLeft, UploadCloud, Database, Music2, Disc3, Users, FileSpreadsheet, LockKeyhole, LogOut, Search, Save, CheckCircle2, AlertTriangle, RefreshCw, Pencil, ShieldCheck, ChevronLeft, ChevronRight } from 'lucide-vue-next'
 
 definePageMeta({ layout: false })
-useSeoMeta({title:'Administración | WEBMUSIC',robots:'noindex,nofollow'})
+useSeoMeta({title:'Administración | CieloPlay',robots:'noindex,nofollow'})
 type Session = { authenticated:boolean; configured:boolean; database:boolean; storage?:'local'|'cloudflare' }
 type Summary = { tracks:number; artists:number; albums:number; skipped:number }
 type Preview = { summary:Summary; warnings:string[]; sample:Array<{artist:string;album:string;track:string;year:number;trackNumber:number}> }
@@ -112,7 +112,7 @@ watch(isAuthorized,ok=>{if(ok)void loadStats()},{immediate:true})
 <div class="min-h-screen bg-[#090b13] px-4 py-6 text-white md:px-8 md:py-10">
  <div class="mx-auto max-w-[1180px]">
   <header class="mb-8 flex flex-wrap items-center justify-between gap-3">
-   <div><NuxtLink to="/" class="inline-flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-white"><ArrowLeft :size="18"/> Volver a WEBMUSIC</NuxtLink><h1 class="mt-4 text-3xl font-black tracking-tight">Panel administrativo</h1><p class="mt-2 text-sm text-[#9ea1b4]">Gestiona tu catálogo, importa artistas y organiza canciones.</p></div>
+   <div><NuxtLink to="/" class="inline-flex items-center gap-2 text-sm font-semibold text-violet-300 hover:text-white"><ArrowLeft :size="18"/> Volver a CieloPlay</NuxtLink><h1 class="mt-4 text-3xl font-black tracking-tight">Panel administrativo</h1><p class="mt-2 text-sm text-[#9ea1b4]">Gestiona tu catálogo, importa artistas y organiza canciones.</p></div>
    <button v-if="isAuthorized" class="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-[#202333] px-4 py-2.5 text-sm font-bold hover:bg-[#292d41]" @click="logout"><LogOut :size="17"/> Cerrar sesión</button>
   </header>
   <div v-if="loadingSession" class="animate-pulse rounded-2xl bg-[#1c1f2b] p-9 text-center">Verificando acceso…</div>

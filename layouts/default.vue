@@ -42,8 +42,9 @@ onUnmounted(()=>window.removeEventListener('keydown',keydown))
  <div v-if="menuOpen" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden" @click="menuOpen=false"/>
  <aside :class="menuOpen?'translate-x-0':'-translate-x-full'" class="fixed inset-y-0 left-0 z-50 w-[248px] border-r border-white/[.065] bg-[#10131c] transition-transform duration-300 lg:translate-x-0">
   <div class="flex h-24 items-center gap-3 px-6">
-   <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-fuchsia-600 shadow-lg shadow-violet-500/20"><Music2 :size="26" :stroke-width="2.5"/></div>
-   <NuxtLink to="/" class="text-[22px] font-black tracking-tight">web<span class="text-violet-400">music</span></NuxtLink>
+   <NuxtLink to="/" aria-label="CieloPlay — ir al inicio" class="flex min-w-0 items-center" title="CieloPlay">
+    <img src="/branding/cieloplay-logo.jpg" width="190" height="48" alt="CieloPlay" class="h-auto w-[190px] max-w-full object-contain mix-blend-screen" decoding="async" fetchpriority="high"/>
+   </NuxtLink>
    <button class="ml-auto lg:hidden" aria-label="Cerrar menú" @click="menuOpen=false"><X :size="22"/></button>
   </div>
   <div class="px-4 pt-6">

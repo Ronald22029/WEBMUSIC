@@ -15,10 +15,10 @@ export default defineNuxtConfig({
   app: {
     head: {
       htmlAttrs: { lang: 'es' },
-      title: 'WEBMUSIC — Tu biblioteca musical',
-      link: [{ rel: 'manifest', href: '/manifest.webmanifest' }, { rel:'icon', type:'image/svg+xml', href:'/icons/webmusic.svg' }],
+      title: 'CieloPlay — Tu biblioteca musical',
+      link: [{ rel: 'manifest', href: '/manifest.webmanifest' }, { rel:'icon', type:'image/svg+xml', href:'/icons/cieloplay.svg' }],
       meta: [
-        { name: 'description', content: 'Explora artistas, álbumes y canciones en WEBMUSIC.' },
+        { name: 'description', content: 'Explora artistas, álbumes y canciones en CieloPlay.' },
         { name: 'theme-color', content: '#080a11' },
         { name: 'apple-mobile-web-app-capable', content: 'yes' },
         { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' }

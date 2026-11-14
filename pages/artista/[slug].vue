@@ -21,7 +21,7 @@ const discography=computed(()=>{
  return groups.map(name=>({name,items:albums.value.filter(a=>category(a.releaseType||'')===name)})).filter(g=>g.items.length)
 })
 useSeoMeta({
- title:()=>artist.value?artist.value.name+' — Discografía | WEBMUSIC':'Artista | WEBMUSIC',
+ title:()=>artist.value?artist.value.name+' — Discografía | CieloPlay':'Artista | CieloPlay',
  description:()=>artist.value?'Explora los '+albums.value.length+' álbumes y '+artistTracks.value.total+' canciones de '+artist.value.name+'.':'Descubre artistas musicales.',
  ogImage:()=>artist.value?.cover
 })

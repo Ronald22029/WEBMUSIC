@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ArrowLeft, Database, CalendarX, ImageOff, Link2Off, AlertTriangle, ShieldCheck, Copy, Download, RefreshCcw } from 'lucide-vue-next'
 definePageMeta({layout:false})
-useSeoMeta({title:'Calidad del catálogo | WEBMUSIC',robots:'noindex,nofollow'})
+useSeoMeta({title:'Calidad del catálogo | CieloPlay',robots:'noindex,nofollow'})
 type Finding={id:string;name:string;artist?:string;reason:string;type:string;audioUrl?:string}
 type Diagnostics={storage:string;counts:{missingYear:number;missingCover:number;missingAudio:number;uncheckedAudio:number;duplicateLinks:number;duplicateAlbums:number};kind:string;total:number;offset:number;limit:number;rows:Finding[];notice:string}
 const {data:session}=await useFetch<{authenticated:boolean}>('/api/admin/auth/session')

@@ -1,7 +1,7 @@
-/* WEBMUSIC: solo guarda el aviso offline y los recursos propios mínimos.
+/* CieloPlay: solo guarda el aviso offline y los recursos propios mínimos.
    Nunca intercepta ni almacena música externa, APIs privadas o credenciales. */
-const CACHE = 'webmusic-offline-v1'
-const PRECACHE = ['/offline.html', '/icons/webmusic.svg', '/manifest.webmanifest']
+const CACHE = 'webmusic-offline-v2'
+const PRECACHE = ['/offline.html', '/icons/cieloplay.svg', '/manifest.webmanifest']
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(PRECACHE)).then(()=>self.skipWaiting()))
 })

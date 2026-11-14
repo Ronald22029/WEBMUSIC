@@ -14,7 +14,7 @@ const albums=computed(()=>{
 })
 const visible=computed(()=>albums.value.slice((page.value-1)*pageSize,page.value*pageSize))
 watch([artistId,query,order,yearFilter],()=>page.value=1)
-useSeoMeta({title:'Álbumes | WEBMUSIC',description:'Descubre álbumes organizados por artista y año en WEBMUSIC.'})
+useSeoMeta({title:'Álbumes | CieloPlay',description:'Descubre álbumes organizados por artista y año en CieloPlay.'})
 </script>
 <template>
 <NuxtLayout>
