@@ -31,7 +31,7 @@ Contiene un `manifest.json` y SQL dividido en pequeños archivos ordenados por a
 ```powershell
 node scripts/apply-d1.mjs --remote
 # El comando anterior solo muestra la vista previa, no modifica datos.
-node scripts/apply-d1.mjs --remote --apply
+node scripts/apply-d1.mjs --remote --apply --max-files=25
 ```
 5. Guardar secretos (nunca en Git):
 ```powershell
@@ -60,3 +60,17 @@ Cloudflare Free tiene límites diarios de solicitudes y consultas D1. Los metada
 Las rutas GET `/api/catalog` y `/api/tracks` utilizan la Cache API de Cloudflare cuando está disponible. El TTL es de 300 s para catálogo y 120 s para búsquedas. Los cambios administrativos pueden tardar ese tiempo en reflejarse en otras ubicaciones. No se cachea nada de `/api/admin/`, ninguna canción ni playlists personales.
 
 La búsqueda actual por fragmentos utiliza `LIKE '%texto%'`: puede resultar costosa en D1 con tráfico elevado. Antes de abrir al público es recomendable medir `rows_read` y considerar un índice FTS5. El plan gratuito no garantiza uso ilimitado.
+
+## Importación reanudable en Cloudflare Free
+
+La importación ahora deja su progreso privado en `.data/cloudflare-import/progress.remote.json`. Cada ejecución procesa como máximo **25 archivos SQL** por defecto, de aproximadamente 250 registros cada uno; se puede usar `--max-files=10` para una migración más conservadora. Los índices también consumen escrituras. En la cuenta Free, si se agotan las filas escritas del día, **no se paga automáticamente**: el siguiente intento puede fallar hasta el próximo reinicio diario (00:00 UTC).
+
+**Antes de importar:** sustituye en `wrangler.jsonc` el `database_id` todo-cero por el UUID de D1. Luego ejecuta:
+
+```powershell
+node scripts/export-d1.mjs
+node scripts/apply-d1.mjs --remote
+node scripts/apply-d1.mjs --remote --apply --max-files=25
+```
+
+Repite solamente el último comando en sesiones posteriores; **reanudará donde quedó**. No borres ni reemplaces `.data/cloudflare-import` durante la importación y no vuelvas a ejecutar `export-d1.mjs` hasta terminar. Al completar, ejecuta `npx wrangler d1 execute cieloplay-db --remote --command 'SELECT COUNT(*) AS total FROM tracks'` y comprueba el total. El CSV/SQLite original y la copia local no son alterados.
