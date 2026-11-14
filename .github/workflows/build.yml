@@ -21,9 +21,12 @@ jobs:
         run: |
           node --check scripts/import-csv.mjs
           node --check scripts/smoke-local.mjs
+          node --check scripts/smoke-sqlite.mjs
       - name: Instalar dependencias
         run: npm install --no-audit --no-fund
       - name: Compilar Nuxt
         run: npm run build
       - name: Prueba funcional del modo local
         run: node scripts/smoke-local.mjs
+      - name: Prueba funcional de SQLite
+        run: node scripts/smoke-sqlite.mjs
