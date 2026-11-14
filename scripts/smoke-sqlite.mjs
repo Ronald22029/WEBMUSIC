@@ -52,7 +52,7 @@ try{
    }
  }
  const manifest=await fetch(base+'/manifest.webmanifest')
- if(!manifest.ok||(await manifest.text()).includes('WEBMUSIC')===false)throw Error('PWA manifest no accesible')
+ if(!manifest.ok||(await manifest.text()).includes('CieloPlay')===false)throw Error('PWA manifest no accesible')
  const worker=await fetch(base+'/sw.js')
  if(!worker.ok||(await worker.text()).includes('webmusic-offline')===false)throw Error('Service worker no accesible')
  const c=(await request('/api/catalog')).json
