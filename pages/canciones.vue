@@ -3,13 +3,14 @@ import { computed, ref, watch } from 'vue'
 const route=useRoute()
 const {data:catalog}=useCatalog()
 const query=ref(String(route.query.q||''))
+const debouncedQuery=useDebouncedValue(query,250)
 const artistId=ref(String(route.query.artista||'all'))
 const genre=ref(String(route.query.genero||'all'))
 const page=ref(1)
 const pageSize=30
 const genres=computed(()=>[...new Set(catalog.value.albums.map(a=>a.genre).filter(Boolean))].sort())
 const filters=computed(()=>({
- q:query.value,artistId:artistId.value==='all'?'':artistId.value,
+ q:debouncedQuery.value,artistId:artistId.value==='all'?'':artistId.value,
  genre:genre.value==='all'?'':genre.value,offset:(page.value-1)*pageSize,limit:pageSize
 }))
 const {data:result,pending}=useTracks(filters)

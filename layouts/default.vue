@@ -5,6 +5,7 @@ const { data } = useCatalog()
 const menuOpen = ref(false)
 const search = ref(String(route.query.q || ''))
 const searchFocused = ref(false)
+const debouncedSearch=useDebouncedValue(search,250)
 const input = ref<HTMLInputElement | null>(null)
 const nav = [
  { to: '/', name: 'Inicio', icon: House },
@@ -15,7 +16,7 @@ const nav = [
  { to: '/playlists', name: 'Mis playlists', icon: Library }
 ]
 const normalized = computed(() => search.value.trim().toLocaleLowerCase('es').normalize('NFD').replace(/[\u0300-\u036f]/g,''))
-const {data:quickTracks}=useTracks(computed(()=>({q:normalized.value.length>=2?search.value:'',limit:6})))
+const {data:quickTracks}=useTracks(computed(()=>({q:normalized.value.length>=2?debouncedSearch.value:'',limit:6})))
 const suggestions = computed(() => {
  if (normalized.value.length < 2) return []
  const term = normalized.value

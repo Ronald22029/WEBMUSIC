@@ -92,3 +92,33 @@ Las URL pueden estar caídas, ser temporales o bloquear reproducción externa; u
 - Al crear un álbum, el año es opcional y permanece vacío hasta que se indique una fecha respaldada.
 - La migración `clear_unverified_miel_san_marcos_2020_v1` elimina el 2020 incorrectamente atribuido a cinco álbumes clásicos de Miel San Marcos. No modifica los años corregidos manualmente ni el 2020 confirmado de *Adorando en Casa (Amigos Invitados)*.
 - Los demás años proceden del catálogo CSV original. **No se han verificado uno por uno**; no deben interpretarse como fechas certificadas. Pueden revisarse y corregirse desde el administrador.
+
+## Mejoras WEBMUSIC 2026 — reproductor, playlists, calidad y PWA
+
+### Reproducción
+- Controles de cola desde el reproductor inferior y la vista ampliada.
+- **Reproducir siguiente**, **Añadir a la cola**, eliminar una canción pendiente y vaciar futuras pistas.
+- Si inicias un álbum o un artista, el reproductor carga automáticamente la siguiente página al llegar al final de las pistas ya obtenidas (hasta 100 canciones por petición).
+- Las pistas externas no reproducibles muestran un error, sin intentar saltar DRM ni extraer audio.
+
+### Playlists locales
+- `/playlists`: crea hasta 50 playlists y guarda hasta 200 canciones por lista.
+- Añade canciones desde el menú de opciones junto a cada pista.
+- No se requiere cuenta; la información se guarda en `localStorage` del navegador. Para sincronizar entre equipos sería necesaria una cuenta y un backend de usuarios.
+- Favoritos, historial y playlists consultan canciones mediante `POST /api/tracks-by-ids`; no se truncan cuando el conjunto de IDs supera una URL corta.
+
+### Catálogo y rendimiento
+- Discografías agrupadas por tipo de lanzamiento según el metadato existente; sin inventar clasificaciones ausentes.
+- Filtros de año (incluido «Sin año confirmado»), búsqueda con demora corta para reducir peticiones y paginación.
+- Índices locales SQLite seguros e idempotentes para filtros por álbum, artista y URL.
+- Calidad: `/admin/calidad` con conteos, revisión paginada y exportación CSV de la página de resultados.
+- Diagnósticos de años, portadas y URLs vacías, pistas con URLs repetidas, posibles álbumes repetidos y fuentes sin comprobar. **No se elimina contenido**.
+- El administrador puede probar **individualmente** la carga de metadatos de audio desde el navegador. No equivale a certificar reproducción real ni derechos de distribución.
+
+### Instalación en dispositivos
+- Manifest PWA, marca visual y service worker con aviso offline.
+- El service worker **no descarga ni cachea canciones**, audios de terceros, datos administrativos ni el catálogo. La reproducción sigue requiriendo conexión.
+- Ser instalable como acceso web/PWA no significa que una APK esté publicada o autorizada en Google Play.
+- Ver `docs/publicacion-android.md` para controles previos a una futura publicación.
+
+**Respaldo:** conserva tu archivo privado `.data/webmusic/webmusic.sqlite` y favoritos/playlists del navegador antes de limpiar datos o reinstalar Windows. `git pull` actualiza código, no crea copias de la base ni sincroniza playlists.

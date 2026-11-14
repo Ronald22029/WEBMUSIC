@@ -51,6 +51,10 @@ try{
      throw Error('Página '+route+' no se pudo renderizar: HTTP '+pageResponse.status+' '+html.slice(0,500))
    }
  }
+ const manifest=await fetch(base+'/manifest.webmanifest')
+ if(!manifest.ok||(await manifest.text()).includes('WEBMUSIC')===false)throw Error('PWA manifest no accesible')
+ const worker=await fetch(base+'/sw.js')
+ if(!worker.ok||(await worker.text()).includes('webmusic-offline')===false)throw Error('Service worker no accesible')
  const c=(await request('/api/catalog')).json
  check(c.counts.tracks,1,'published tracks')
  check(c.artists.length,1,'artists')

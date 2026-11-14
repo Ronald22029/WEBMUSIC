@@ -28,7 +28,8 @@ export default defineEventHandler(async event=>{
   }
   const config=configs[kind]||configs.missing_year!
   const total=(db.prepare('SELECT COUNT(*) n FROM '+config.from+' WHERE '+config.where).get() as {n:number}).n
-  const rows=db.prepare('SELECT al.id AS id,'+config.name+' AS name,'+config.artist+' AS artist FROM '+config.from+' WHERE '+config.where+' ORDER BY '+config.order+' LIMIT ? OFFSET ?').all(limit,offset)
+  const audioField=kind.includes('audio')||kind==='duplicate_links'?'al.audio_url':'NULL'
+  const rows=db.prepare('SELECT al.id AS id,'+config.name+' AS name,'+config.artist+' AS artist,'+audioField+' AS audioUrl FROM '+config.from+' WHERE '+config.where+' ORDER BY '+config.order+' LIMIT ? OFFSET ?').all(limit,offset)
   return {storage:'local',counts,kind,total,offset,limit,rows:rows.map(row=>({...row,type:kind,reason:config.reason})),notice:'Análisis del catálogo; no se han verificado enlaces externos ni licencias.'}
  }
  const catalog=await readLocalCatalog()

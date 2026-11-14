@@ -2,8 +2,8 @@
 import { Heart, Clock3, Library } from 'lucide-vue-next'
 const lib=useLocalLibrary()
 const {data}=useCatalog()
-const ids=computed(()=>[...new Set([...lib.favorites.value,...lib.recent.value])].slice(0,200).join(','))
-const {data:myTracks}=useTracks(computed(()=>({ids:ids.value,limit:200})))
+const ids=computed(()=>[...new Set([...lib.favorites.value,...lib.recent.value])].slice(0,250))
+const {data:myTracks}=useTrackIds(ids,'webmusic-library-ids')
 const favorites=computed(()=>lib.favoriteTracks(myTracks.value.rows))
 const recent=computed(()=>lib.recentTracks(myTracks.value.rows))
 useSeoMeta({title:'Mi biblioteca | WEBMUSIC',robots:'noindex,follow'})

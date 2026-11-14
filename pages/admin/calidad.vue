@@ -2,10 +2,36 @@
 import { ArrowLeft, Database, CalendarX, ImageOff, Link2Off, AlertTriangle, ShieldCheck, Copy, Download, RefreshCcw } from 'lucide-vue-next'
 definePageMeta({layout:false})
 useSeoMeta({title:'Calidad del catálogo | WEBMUSIC',robots:'noindex,nofollow'})
-type Finding={id:string;name:string;artist?:string;reason:string;type:string}
+type Finding={id:string;name:string;artist?:string;reason:string;type:string;audioUrl?:string}
 type Diagnostics={storage:string;counts:{missingYear:number;missingCover:number;missingAudio:number;uncheckedAudio:number;duplicateLinks:number;duplicateAlbums:number};kind:string;total:number;offset:number;limit:number;rows:Finding[];notice:string}
 const {data:session}=await useFetch<{authenticated:boolean}>('/api/admin/auth/session')
 const kind=ref('missing_year'),page=ref(1),limit=30
+const checking=ref('')
+const checks=ref<Record<string,string>>({})
+async function testAudio(row:Finding){
+ if(!row.audioUrl||!row.audioUrl.startsWith('https://'))return
+ checking.value=row.id
+ checks.value={...checks.value,[row.id]:'Consultando metadatos…'}
+ const audio=new Audio()
+ audio.preload='metadata'
+ let timeout:ReturnType<typeof setTimeout>|undefined
+ try{
+  const result=await new Promise<'ok'|'error'>(resolve=>{
+   audio.addEventListener('loadedmetadata',()=>resolve('ok'),{once:true})
+   audio.addEventListener('error',()=>resolve('error'),{once:true})
+   timeout=setTimeout(()=>resolve('error'),12000)
+   audio.src=row.audioUrl!
+   audio.load()
+  })
+  checks.value={...checks.value,[row.id]:result==='ok'?'Metadatos accesibles en este navegador':'No se pudo cargar. Puede ser temporal o estar bloqueado.'}
+ }catch{
+  checks.value={...checks.value,[row.id]:'No se pudieron consultar metadatos.'}
+ }finally{
+  if(timeout)clearTimeout(timeout)
+  audio.removeAttribute('src');audio.load()
+  checking.value=''
+ }
+}
 const params=computed(()=>({kind:kind.value,offset:(page.value-1)*limit,limit}))
 const {data:result,pending,refresh,error}=await useFetch<Diagnostics>('/api/admin/quality',{query:params,immediate:!!session.value?.authenticated})
 watch(kind,()=>page.value=1)
@@ -20,7 +46,8 @@ const options=[
 function exportCsv(){
  if(!result.value)return
  const fields=['id','name','artist','reason'] as const
- const text=fields.join(',')+'\n'+result.value.rows.map(r=>fields.map(key=>'"'+String(r[key]||'').replaceAll('"','""')+'"').join(',')).join('\n')
+ const cell=(value:unknown)=>{const raw=String(value??'');const safe=/^\s*[=+@-]/.test(raw)?String.fromCharCode(39)+raw:raw;return '"'+safe.replaceAll('"','""')+'"'}
+ const text=fields.join(',')+'\n'+result.value.rows.map(r=>fields.map(key=>cell(r[key])).join(',')).join('\n')
  const blob=new Blob(['\uFEFF'+text],{type:'text/csv;charset=utf-8;'})
  const href=URL.createObjectURL(blob)
  const link=document.createElement('a');link.href=href;link.download='webmusic-calidad-'+kind.value+'-pagina-'+page.value+'.csv';link.click()
@@ -50,7 +77,11 @@ function exportCsv(){
    <div class="mt-4 divide-y divide-white/[.06] overflow-hidden rounded-xl border border-white/10 bg-[#171a26]">
     <div v-for="row in result?.rows||[]" :key="row.id" class="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
      <div class="min-w-0"><p class="truncate text-sm font-semibold">{{row.name}}</p><p class="text-xs text-[#a3a6b9]">{{row.artist||'Artista no indicado'}}</p></div>
-     <p class="text-xs text-amber-200/80">{{row.reason}}</p>
+     <div class="flex shrink-0 flex-col items-end gap-1">
+      <p class="text-xs text-amber-200/80">{{row.reason}}</p>
+      <button v-if="row.audioUrl?.startsWith('https://')" :disabled="checking===row.id" class="rounded-lg border border-white/10 px-3 py-1 text-xs text-violet-200 hover:bg-white/10 disabled:opacity-40" @click="testAudio(row)">Probar metadatos</button>
+      <p v-if="checks[row.id]" class="max-w-52 text-right text-[11px] text-[#b7b0cc]">{{checks[row.id]}}</p>
+     </div>
     </div>
     <p v-if="!pending&&!result?.rows.length" class="p-8 text-center text-sm text-[#a0a4b8]">No se encontraron registros.</p>
    </div>
@@ -59,7 +90,7 @@ function exportCsv(){
     <span>{{page}} / {{Math.ceil(result.total/limit)}}</span>
     <button class="rounded-lg border border-white/10 px-4 py-2 disabled:opacity-40" :disabled="page*limit>=result.total" @click="page++">Siguiente</button>
    </div>
-   <p class="mt-7 text-xs leading-6 text-[#8f93a7]">Los enlaces marcados «no verificados» pueden funcionar o no. No se han realizado solicitudes automáticas a servidores de música ni se han borrado registros.</p>
+   <p class="mt-7 text-xs leading-6 text-[#8f93a7]">Los enlaces marcados «no verificados» pueden funcionar o no. Solo al pulsar «Probar metadatos» se intenta abrir ese archivo desde tu navegador. No se comprueban automáticamente todos los enlaces, ni se infiere autorización para reproducirlos. No se borran registros.</p>
   </template>
  </main>
 </div>
