@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import { isDailymotionTrack } from '~/utils/media'
 import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Shuffle, Repeat2, Repeat1, Music2, X, ChevronUp, ChevronDown, Heart, Loader2, Headphones } from 'lucide-vue-next'
 const p = usePlayer()
 const lib = useLocalLibrary()
 const { data } = useCatalog()
 const artist = computed(() => data.value.artists.find(a => a.id === p.current.value?.artistId))
 const album = computed(() => data.value.albums.find(a => a.id === p.current.value?.albumId))
-const videoTrack = computed(() => isDailymotionTrack(p.current.value))
-const videoPage = computed(() => videoTrack.value ? p.current.value?.audioUrl : '')
 const cover = computed(() => p.current.value?.cover || album.value?.cover || '')
 const liked = computed(() => !!p.current.value && lib.isFavorite(p.current.value.id))
 const repeatLabel = computed(() => p.repeatMode.value === 2 ? 'Repetir canción' : p.repeatMode.value === 1 ? 'Repetir lista' : 'Activar repetición')
@@ -37,7 +34,7 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
             <span v-if="p.playing.value" class="absolute inset-x-0 bottom-0 flex h-6 items-center justify-center bg-black/65"><EqualizerBars active small/></span>
           </button>
           <div class="min-w-0 flex-1">
-            <div v-if="p.current.value" class="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-violet-300"><span class="h-1.5 w-1.5 rounded-full bg-violet-400" :class="{'wm-playing-dot':p.playing.value}"/>{{videoTrack?(p.playing.value?'Reproduciendo desde Dailymotion':p.dmStatus.value==='blocked'?'Requiere video visible':'Audio externo de Dailymotion'):p.buffering.value?'Cargando audio':p.playing.value?'Reproduciendo':'En pausa'}}</div>
+            <div v-if="p.current.value" class="mb-0.5 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[.13em] text-violet-300"><span class="h-1.5 w-1.5 rounded-full bg-violet-400" :class="{'wm-playing-dot':p.playing.value}"/>{{p.buffering.value?'Cargando audio':p.playing.value?'Reproduciendo':'En pausa'}}</div>
             <div v-else class="mb-0.5 text-[10px] font-semibold uppercase tracking-widest text-violet-300">Tu reproductor</div>
             <button class="block w-full truncate text-left text-[14px] font-extrabold leading-tight text-white hover:text-violet-200 sm:text-[15px]" :title="currentTitle" @click="p.expanded.value=true">{{currentTitle}}</button>
             <div class="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-[#a9adc1]">
@@ -91,11 +88,6 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <div class="min-w-0 flex-1"><h2 class="truncate text-2xl font-black text-white" :title="currentTitle">{{currentTitle}}</h2><p class="mt-2 truncate text-sm text-[#c7c0d9]">{{currentArtist}}<span v-if="album"> · {{album.title}}</span></p></div>
           <button v-if="p.current.value" class="rounded-full bg-white/10 p-3 hover:bg-white/15" :aria-label="liked?'Quitar de favoritos':'Guardar favorito'" :aria-pressed="liked" @click="favorite"><Heart :size="21" :fill="liked?'currentColor':'none'" :class="{'text-violet-300':liked}"/></button>
         </div>
-        <div v-if="videoTrack" class="mt-5 rounded-xl border border-violet-400/20 bg-violet-400/[.08] p-3 text-center text-xs text-[#ddd0f4]">
-          Reproducción experimental de Dailymotion. El video puede requerir visibilidad.
-          <button class="ml-2 inline-flex items-center rounded-full bg-white/10 px-3 py-2 font-semibold text-white hover:bg-white/20" @click="p.dmShowVideo.value=!p.dmShowVideo.value">{{p.dmShowVideo.value?'Ocultar video':'Mostrar video'}}</button>
-          <a :href="videoPage||'#'" target="_blank" rel="noopener noreferrer" class="ml-2 inline-flex rounded-full bg-white/10 px-3 py-2 font-semibold hover:bg-white/20">Abrir Dailymotion ↗</a>
-        </div>
         <div class="mt-8"><ProgressTimeline large :position="p.position.value" :duration="p.duration.value" :playing="p.playing.value" :buffering="p.buffering.value" @seek="p.seek"/></div>
         <div class="mt-6 flex items-center justify-between gap-2">
           <button class="rounded-full p-3 text-[#d1c6e9]" :aria-pressed="p.shuffle.value" aria-label="Aleatorio" :class="{'text-violet-300':p.shuffle.value}" @click="p.shuffle.value=!p.shuffle.value"><Shuffle :size="21"/></button>
@@ -105,11 +97,10 @@ onUnmounted(() => window.removeEventListener('keydown',keyDown))
           <button class="rounded-full p-3 text-[#d1c6e9]" :aria-label="repeatLabel" :class="{'text-violet-300':p.repeatMode.value>0}" @click="p.cycleRepeat()"><Repeat1 v-if="p.repeatMode.value===2" :size="22"/><Repeat2 v-else :size="22"/></button>
         </div>
         <div class="mt-7 flex items-center gap-3 text-[#c9c0db]"><Volume2 :size="20"/><input aria-label="Volumen" type="range" min="0" max="1" step=".01" class="flex-1" :value="p.volume.value" @input="setVolume"/></div>
-        <p class="mt-7 text-center text-xs text-[#ada4bc]">{{videoTrack?'Prueba local de Dailymotion: la plataforma puede exigir mostrar el video':'Reproducción mediante enlace externo · Disponibilidad según su servidor'}}</p>
+        <p class="mt-7 text-center text-xs text-[#ada4bc]">Reproducción mediante enlace externo · Disponibilidad según su servidor</p>
       </div>
     </section>
   </Transition>
-  <DailymotionExperiment v-if="videoTrack" />
 </Teleport>
 </template>
 <style scoped>

@@ -1,7 +1,6 @@
 import { copyFile, mkdir, readFile, rename, writeFile, unlink } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import seed from '../data/catalog.json'
-import { dailymotionArtist, dailymotionAlbum, dailymotionTrack } from '../data/dailymotion-sample'
 import type { Artist, Album, Catalog, Track } from '../../types/music'
 import type { ImportTrack } from './csv-music'
 
@@ -12,12 +11,29 @@ export const localCatalogPath = resolve(dataDir, 'catalog.local.json')
 const backupPath = localCatalogPath + '.bak'
 const initialCatalog = seed as Catalog
 
-// Prueba de Dailymotion en un archivo independiente del CSV y del catálogo base.
-// No elimina ni sobrescribe los registros locales existentes.
-function withVideoSample(data: LocalCatalog): LocalCatalog {
-  if (!data.artists.some(a => a.id === dailymotionArtist.id)) data.artists.push(structuredClone(dailymotionArtist))
-  if (!data.albums.some(a => a.id === dailymotionAlbum.id)) data.albums.push(structuredClone(dailymotionAlbum))
-  if (!data.tracks.some(t => t.id === dailymotionTrack.id)) data.tracks.push(structuredClone(dailymotionTrack))
+// Excluye la prueba de video de Génesis Campos del catálogo local, incluso si
+// una copia de esa entrada se guardó antes en .data/. No toca ninguna otra
+// canción ni un enlace que el usuario haya reemplazado posteriormente.
+function withoutRemovedVideoExperiment(data: LocalCatalog): LocalCatalog {
+  const trackId = 't-genesis-campos-fluye-en-mi-medley-001-fluye-en-mi'
+  const albumId = 'alb-genesis-campos-fluye-en-mi-medley'
+  const artistId = 'a-genesis-campos'
+  const legacyUrls = new Set([
+    'https://dai.ly/xbvseii',
+    'https://www.dailymotion.com/video/xbvseii'
+  ])
+  const oldCount = data.tracks.length
+  data.tracks = data.tracks.filter(t =>
+    !(t.id === trackId && legacyUrls.has(t.audioUrl))
+  )
+  if (data.tracks.length !== oldCount) {
+    if (!data.tracks.some(t => t.albumId === albumId)) {
+      data.albums = data.albums.filter(a => a.id !== albumId)
+    }
+    if (!data.albums.some(a => a.artistId === artistId)) {
+      data.artists = data.artists.filter(a => a.id !== artistId)
+    }
+  }
   return data
 }
 
@@ -33,11 +49,11 @@ export async function readLocalCatalog(): Promise<LocalCatalog> {
     const content = await readFile(localCatalogPath, 'utf8')
     const parsed: unknown = JSON.parse(content)
     verifyCatalog(parsed)
-    return withVideoSample(parsed)
+    return withoutRemovedVideoExperiment(parsed)
   } catch (error: unknown) {
     if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') {
       // El catálogo inicial es de solo lectura; se crea copia privada al primer guardado.
-      return withVideoSample(structuredClone(initialCatalog))
+      return structuredClone(initialCatalog)
     }
     // Jamás sustituir silenciosamente un archivo dañado por datos de demostración.
     throw error

@@ -1,5 +1,3 @@
-import { isDailymotionTrack } from '~/utils/media'
-import { dailymotionBridge } from '~/utils/dailymotion-bridge'
 import type { Catalog, Track } from '~/types/music'
 
 // El objeto Audio nunca se guarda en useState: no es serializable para SSR de Nuxt.
@@ -17,9 +15,6 @@ export function usePlayer() {
   const shuffle = useState('player-shuffle', () => false)
   const repeatMode = useState<0 | 1 | 2>('player-repeat-mode', () => 0)
   const expanded = useState('player-expanded', () => false)
-  const dmShowVideo = useState('dm-show-video', () => false)
-  const dmRequest = useState('dm-play-request', () => 0)
-  const dmStatus = useState<'idle'|'loading'|'ready'|'blocked'>('dm-status', () => 'idle')
   const { data: catalog } = useNuxtData<Catalog>('music-catalog')
   const library = useLocalLibrary()
 
@@ -75,8 +70,6 @@ export function usePlayer() {
       error.value = 'Esta canción todavía no tiene un enlace HTTPS de audio válido.'
       return
     }
-    const externalVideo = isDailymotionTrack(track)
-    if (!externalVideo) dailymotionBridge.pause()
     const audio = ensureAudio()
     if (!audio) return
     if (list?.length) {
@@ -88,25 +81,6 @@ export function usePlayer() {
       else index.value = found
     }
     error.value = ''
-    if (externalVideo) {
-      // Prueba de video oculto controlado por el Web SDK oficial. Sin extraer el audio.
-      audio.pause()
-      audio.removeAttribute('src')
-      audio.load()
-      current.value = track
-      playing.value = false
-      buffering.value = true
-      position.value = 0
-      duration.value = track.duration || 0
-      dmShowVideo.value = false
-      dmStatus.value = 'loading'
-      expanded.value = false
-      dmRequest.value++
-      library.remember(track.id)
-      return
-    }
-    expanded.value = false
-    dmStatus.value = 'idle'
     const different = current.value?.id !== track.id || audio.src !== track.audioUrl
     current.value = track
     if (different) {
@@ -129,24 +103,14 @@ export function usePlayer() {
       error.value = 'No se pudo iniciar el audio. Revisa el enlace y los permisos del servidor externo.'
     }
   }
-  function pause() {
-    if (isDailymotionTrack(current.value)) { dailymotionBridge.pause(); playing.value = false; return }
-    ensureAudio()?.pause(); playing.value = false
-  }
+  function pause() { ensureAudio()?.pause(); playing.value = false }
   async function resume() {
-    if (isDailymotionTrack(current.value)) {
-      if (!dailymotionBridge.play()) dmRequest.value++
-      return
-    }
     const audio = ensureAudio()
     if (!audio || !current.value) return
     try { await audio.play(); playing.value = true; error.value = '' }
     catch { playing.value = false; error.value = 'El navegador no permitió reanudar la reproducción.' }
   }
-  function toggle() {
-    if (isDailymotionTrack(current.value)) { void resume(); return }
-    if (playing.value) pause(); else void resume()
-  }
+  function toggle() { if (playing.value) pause(); else void resume() }
   function next() {
     if (!queue.value.length) return
     let i = index.value + 1
@@ -159,18 +123,12 @@ export function usePlayer() {
     if (track) void start(track)
   }
   function previous() {
-    if (isDailymotionTrack(current.value)) {
-      if (position.value > 3) { seek(0); return }
-      if (index.value > 0 && queue.value[index.value - 1]) void start(queue.value[index.value - 1])
-      return
-    }
     const audio = ensureAudio()
     if (audio && audio.currentTime > 3) { seek(0); return }
     if (index.value > 0 && queue.value[index.value - 1]) void start(queue.value[index.value - 1])
     else seek(0)
   }
   function seek(seconds: number) {
-    if (isDailymotionTrack(current.value)) { dailymotionBridge.seek(seconds); position.value = seconds; return }
     const audio = ensureAudio()
     if (audio && Number.isFinite(seconds)) audio.currentTime = Math.max(0, Math.min(seconds, duration.value || seconds))
   }
@@ -178,8 +136,7 @@ export function usePlayer() {
     volume.value = Math.max(0, Math.min(1, value))
     const audio = ensureAudio()
     if (audio) audio.volume = volume.value
-    dailymotionBridge.volume(volume.value)
   }
   function cycleRepeat() { repeatMode.value = ((repeatMode.value + 1) % 3) as 0 | 1 | 2 }
-  return { current, queue, index, playing, buffering, position, duration, volume, error, shuffle, repeatMode, expanded, dmShowVideo, dmRequest, dmStatus, start, pause, resume, toggle, next, previous, seek, setVolume, cycleRepeat }
+  return { current, queue, index, playing, buffering, position, duration, volume, error, shuffle, repeatMode, expanded, start, pause, resume, toggle, next, previous, seek, setVolume, cycleRepeat }
 }

@@ -107,13 +107,3 @@ Para compilar en local, el preset predeterminado es Node.js. El despliegue Cloud
 - APK Android y despliegue público.
 
 **Derechos:** encontrar una URL de música en internet no acredita que sea legal retransmitirla. Solo publica música con autorización o licencias aplicables.
-
-## Prueba local experimental con Dailymotion (Génesis Campos)
-
-En `/artista/genesis-campos` está el video `https://dai.ly/xbvseii`. La prueba integra el **Web SDK de Dailymotion**, no su reproductor legado. Si el servidor y navegador lo permiten, WEBMUSIC intenta reproducirlo con el video minimizado y la portada visible en el reproductor inferior.
-
-**No es una modalidad de solo audio admitida oficialmente.** El reproductor necesita configuración de Dailymotion (Player ID) y puede exigir visibilidad para reproducción, publicidad y permisos. La integración puede no funcionar. Para diagnóstico se ofrece el botón **Mostrar video** y el enlace **Abrir Dailymotion**. No se modifican ni se extraen archivos de video/audio.
-
-En `.env` puedes definir `NUXT_PUBLIC_DAILYMOTION_PLAYER_ID=TU_PLAYER_ID` con un reproductor creado en Dailymotion Studio. El ID `x8lr5` en `nuxt.config.ts` es un valor experimental de ejemplo y **no equivale a un Player ID propio**, por lo que debes configurar uno para una integración estable.
-
-Si ocultar el reproductor está prohibido por los términos aplicables, utiliza siempre el reproductor visible o una fuente de audio autorizada. En producción es necesario revisar las licencias musicales y condiciones de inserción.
