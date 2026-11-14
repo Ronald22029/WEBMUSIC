@@ -43,6 +43,14 @@ try{
   await delay(350)
  }
  if(!launched)throw Error('Server did not launch: '+logs)
+ // Comprobar el renderizado HTML SSR de páginas reales, no solo los endpoints JSON.
+ for(const route of ['/', '/album/album-test', '/artista/test', '/canciones', '/albumes']){
+   const pageResponse=await fetch(base+route)
+   const html=await pageResponse.text()
+   if(!pageResponse.ok || /Cannot access ['"]page['"] before initialization|__nuxt_error|Internal Server Error/.test(html)){
+     throw Error('Página '+route+' no se pudo renderizar: HTTP '+pageResponse.status+' '+html.slice(0,500))
+   }
+ }
  const c=(await request('/api/catalog')).json
  check(c.counts.tracks,1,'published tracks')
  check(c.artists.length,1,'artists')

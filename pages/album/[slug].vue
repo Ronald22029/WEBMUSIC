@@ -5,9 +5,9 @@ const {data}=useCatalog()
 const player=usePlayer()
 const album=computed(()=>data.value.albums.find(a=>a.slug===route.params.slug))
 const artist=computed(()=>data.value.artists.find(a=>a.id===album.value?.artistId))
+const page=ref(1)
 const {data:trackResponse} = useTracks(computed(()=>({albumId:album.value?.id||'',limit:100,offset:(page.value-1)*100})))
 const tracks=computed(()=>trackResponse.value.rows)
-const page=ref(1)
 watch(()=>album.value?.id,()=>{page.value=1})
 useSeoMeta({
  title:()=>album.value?album.value.title+' — '+artist.value?.name+' | WEBMUSIC':'Álbum | WEBMUSIC',
