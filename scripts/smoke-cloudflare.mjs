@@ -22,7 +22,9 @@ let logs=''
 try{
  execute(['d1','execute','cieloplay-db','--local','--yes','--file','db/cloudflare/0001_schema.sql','--persist-to',dir])
  execute(['d1','execute','cieloplay-db','--local','--yes','--file',fixture,'--persist-to',dir])
- server=spawn('npx',['wrangler','dev','--local','--ip','127.0.0.1','--port',port,'--persist-to',dir],{stdio:['ignore','pipe','pipe'],env:process.env})
+ server=spawn('npx',['wrangler','dev','--local','--ip','127.0.0.1','--port',port,'--persist-to',dir,
+  '--var','ADMIN_PASSWORD:testing-password-long-enough',
+  '--var','ADMIN_SESSION_SECRET:testing-session-secret-at-least-thirty-two-characters'],{stdio:['ignore','pipe','pipe'],env:process.env})
  server.stdout.on('data',c=>{logs+=(String(c)).slice(-1000)})
  server.stderr.on('data',c=>{logs+=(String(c)).slice(-1000)})
  let ok=false
@@ -38,6 +40,10 @@ try{
   const r=await fetch(base+path,opts)
   if(!r.ok)throw Error(path+': HTTP '+r.status+' '+(await r.text()).slice(0,600))
   return r.json()
+ }
+ const adminSession=await get('/api/admin/auth/session')
+ if(adminSession.configured!==true||adminSession.storage!=='cloudflare') {
+  throw Error('El Worker no puede reconocer secretos administrativos: '+JSON.stringify(adminSession))
  }
  const catalog=await get('/api/catalog')
  if(catalog.counts?.tracks!==1||catalog.albums.length!==1||catalog.artists.length!==1)throw Error('Catálogo D1 incorrecto '+JSON.stringify(catalog.counts))

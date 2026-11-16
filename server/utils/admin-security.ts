@@ -13,6 +13,25 @@ function secrets(event: H3Event) {
 }
 export const adminConfigured = (event: H3Event) => secrets(event).configured
 
+// Estado de diagnóstico seguro: no revela valores, longitudes, hashes
+// ni nombres de otros secretos del Worker. Solo se usa temporalmente
+// en la ruta de sesión con ?diagnostic=1.
+export function adminCredentialDiagnostic(event: H3Event) {
+  const env = event.context.cloudflare?.env
+  const config = useRuntimeConfig(event)
+  const status = (value:unknown, minimum:number):'missing'|'too_short'|'ready' => {
+    if(typeof value !== 'string' || value.length===0) return 'missing'
+    return value.length>=minimum?'ready':'too_short'
+  }
+  const password = env?.ADMIN_PASSWORD || config.adminPassword
+  const sessionSecret = env?.ADMIN_SESSION_SECRET || config.adminSessionSecret
+  return {
+    password:status(password,12),
+    sessionSecret:status(sessionSecret,32),
+    cloudflareBinding:!!env?.DB
+  }
+}
+
 async function digest(value: string) {
   return new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(value)))
 }
